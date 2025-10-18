@@ -36,7 +36,6 @@ bower_components/
 .env.*.local
 .env.*
 
-job_soccer
 # npm pack files
 *.tgz
 

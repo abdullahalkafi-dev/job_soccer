@@ -1,3 +1,6 @@
+import { emailSender } from "./email.sender";
+import { emailTemplate } from "./email.template";
+
 export type TCreateAccount = {
   name: string;
   email: string | undefined;
@@ -28,3 +31,4 @@ export type ISendEmail = {
   subject: string;
   html: string;
 };
+
