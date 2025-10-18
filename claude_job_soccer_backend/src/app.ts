@@ -25,7 +25,7 @@ app.use(
 );
 app.use(
   compression({
-    threshold: 1024, //  compress responses larger than 1KB
+    threshold: 1024,
     level: 6,
   })
 );

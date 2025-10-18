@@ -1,0 +1,117 @@
+import { model, Schema } from "mongoose";
+import { CandidateRole, EmployerRole, TBaseUser } from "./user.interface";
+import { Auth } from "../auth/auth.model";
+const userSchema = new Schema<TBaseUser>(
+  {
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: [1, "First name must be at least 1 characters long"],
+      maxlength: [50, "First name can't be more than 50 characters"],
+      match: [
+        /^[a-zA-ZÀ-ÿ\u00f1\u00d1'-\s]+$/,
+        "First name contains invalid characters",
+      ],
+    },
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: [1, "Last name must be at least 1 characters long"],
+      maxlength: [50, "Last name can't be more than 50 characters"],
+      match: [
+        /^[a-zA-ZÀ-ÿ\u00f1\u00d1'-\s]+$/,
+        "Last name contains invalid characters",
+      ],
+    },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: (value: string) => {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          return emailRegex.test(value);
+        },
+        message: "Please provide a valid email",
+      },
+    },
+    profileImage: {
+      type: String, 
+      trim: true,
+      default: null,
+    },
+    profileId: {
+      type: String,
+      required: false,
+      default: null,
+      trim: true,
+    },
+    authId: { type: Schema.Types.ObjectId, ref: "Auth", required: true },
+    isVerified: { type: Boolean, default: false },
+    role: {
+      type: String,
+      enum: [...Object.values(EmployerRole), ...Object.values(CandidateRole)],
+      required: true,
+    },
+    userType: {
+      type: String,
+      enum: ["candidate", "employer"],
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  }
+);
+userSchema.index({ email: 1 });
+userSchema.index({ authId: 1 });
+userSchema.index({ email: 1 });
+userSchema.index({ profileId: 1 });
+userSchema.index({ userType: 1, role: 1 });
+userSchema.index({ status: 1 });
+userSchema.index({ isVerified: 1 });
+// this for better index performance
+userSchema.index({ createdAt: -1 });
+// this for text search in names
+userSchema.index({ firstName: "text", lastName: "text" });
+
+userSchema.pre("save", async function (next) {
+  if (this.isModified("email")) {
+    const auth = await Auth.findById(this.authId);
+    if (auth) {
+      auth.email = this.email;
+      await auth.save();
+    }
+  }
+
+  const isCandidateRole = Object.values(CandidateRole).includes(
+    this.role as CandidateRole
+  );
+  const isEmployerRole = Object.values(EmployerRole).includes(
+    this.role as EmployerRole
+  );
+
+  if (isCandidateRole && this.userType !== "candidate") {
+    return next(new Error("Invalid userType for candidate role"));
+  }
+  if (isEmployerRole && this.userType !== "employer") {
+    return next(new Error("Invalid userType for employer role"));
+  }
+  next();
+});
+
+//exist user check
+userSchema.statics.isExistUserById = async (id: string) => {
+  const isExist = await User.findById(id);
+  return isExist;
+};
+
+userSchema.statics.isExistUserByEmail = async (email: string) => {
+  const isExist = await User.findOne({ email });
+  return isExist;
+};
+export const User = model<TBaseUser>("User", userSchema, "users");

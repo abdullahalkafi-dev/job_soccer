@@ -1,0 +1,61 @@
+import AppError from "../../errors/AppError";
+import { OneTimeCodeDto } from "./otp.dto";
+import { TCreateOneTimeCode, TOneTimeCode } from "./otp.interface";
+import { OneTimeCode } from "./otp.model";
+import bcrypt from "bcryptjs";
+const createOtpEntry = async (
+  otpEntry: Partial<TCreateOneTimeCode>
+): Promise<Partial<TOneTimeCode>> => {
+  const parseResult = OneTimeCodeDto.createOneTimeCodeDto.safeParse(otpEntry);
+  if (!parseResult.success) {
+    throw new AppError(400, "Invalid OTP entry");
+  }
+
+  await OneTimeCode.findOneAndDelete({
+    userId: parseResult.data.userId,
+    reason: parseResult.data.reason,
+  });
+
+  const hashedOtp = bcrypt.hashSync(parseResult.data.oneTimeCode, 10);
+
+  const newOtpEntry = await OneTimeCode.create({
+    userId: parseResult.data.userId,
+    reason: parseResult.data.reason,
+    oneTimeCodeHash: hashedOtp,
+    expireAt: parseResult.data.expireAt,
+  });
+  if (!newOtpEntry) {
+    throw new AppError(500, "Failed to create OTP entry");
+  }
+  return newOtpEntry;
+};
+
+const validateOtp = async (
+  userId: string,
+  reason: "account_verification" | "password_reset",
+  oneTimeCode: string
+): Promise<boolean> => {
+    const parseResult = OneTimeCodeDto.validateOneTimeCodeDto.safeParse({
+        userId,
+        reason,
+        oneTimeCode,
+    });
+    if (!parseResult.success) {
+        throw new AppError(400, "Invalid OTP data");
+    }
+
+  const otpEntry = await OneTimeCode.findOne({ userId, reason });
+  if (!otpEntry) {
+    throw new AppError(404, "OTP entry not found");
+  }
+  const isValid = bcrypt.compareSync(oneTimeCode, otpEntry.oneTimeCodeHash);
+  if (!isValid) {
+    throw new AppError(400, "Invalid OTP");
+  }
+  return true;
+};
+
+export const OtpService = {
+  createOtpEntry,
+  validateOtp,
+};
