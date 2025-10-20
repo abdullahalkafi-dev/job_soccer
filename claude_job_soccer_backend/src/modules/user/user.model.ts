@@ -54,11 +54,13 @@ const userSchema = new Schema<TBaseUser>(
     role: {
       type: String,
       enum: [...Object.values(EmployerRole), ...Object.values(CandidateRole)],
-      required: true,
+      required: function(): boolean {
+        return (this as any).userType !== "admin";
+      },
     },
     userType: {
       type: String,
-      enum: ["candidate", "employer"],
+      enum: ["candidate", "employer", "admin"],
       required: true,
     },
   },

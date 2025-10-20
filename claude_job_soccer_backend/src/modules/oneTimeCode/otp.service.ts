@@ -1,10 +1,14 @@
 import AppError from "../../errors/AppError";
-import { OneTimeCodeDto } from "./otp.dto";
-import { TCreateOneTimeCode, TOneTimeCode } from "./otp.interface";
+import {
+  OneTimeCodeDto,
+  TCreateOneTimeCodeDto,
+  TValidateOneTimeCodeDto,
+} from "./otp.dto";
+import { TOneTimeCode } from "./otp.interface";
 import { OneTimeCode } from "./otp.model";
 import bcrypt from "bcryptjs";
 const createOtpEntry = async (
-  otpEntry: Partial<TCreateOneTimeCode>
+  otpEntry: Partial<TCreateOneTimeCodeDto>
 ): Promise<Partial<TOneTimeCode>> => {
   const parseResult = OneTimeCodeDto.createOneTimeCodeDto.safeParse(otpEntry);
   if (!parseResult.success) {
@@ -30,19 +34,19 @@ const createOtpEntry = async (
   return newOtpEntry;
 };
 
-const validateOtp = async (
-  userId: string,
-  reason: "account_verification" | "password_reset",
-  oneTimeCode: string
-): Promise<boolean> => {
-    const parseResult = OneTimeCodeDto.validateOneTimeCodeDto.safeParse({
-        userId,
-        reason,
-        oneTimeCode,
-    });
-    if (!parseResult.success) {
-        throw new AppError(400, "Invalid OTP data");
-    }
+const validateOtp = async ({
+  userId,
+  reason,
+  oneTimeCode,
+}: TValidateOneTimeCodeDto): Promise<boolean> => {
+  const parseResult = OneTimeCodeDto.validateOneTimeCodeDto.safeParse({
+    userId,
+    reason,
+    oneTimeCode,
+  });
+  if (!parseResult.success) {
+    throw new AppError(400, "Invalid OTP data");
+  }
 
   const otpEntry = await OneTimeCode.findOne({ userId, reason });
   if (!otpEntry) {

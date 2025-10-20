@@ -5,130 +5,271 @@ import AppError from "../../errors/AppError";
 
 import bcrypt from "bcryptjs";
 import { LoginProvider, TLoginData } from "./auth.interface";
-import { TBaseUser } from "../user/user.interface";
+import { CandidateRole, EmployerRole, TBaseUser } from "../user/user.interface";
 import { User } from "../user/user.model";
 import { Auth } from "./auth.model";
-import auth from "../../shared/middlewares/auth";
+import { jwtHelper } from "../../shared/util/jwtHelper";
+import config from "../../config";
+import mongoose from "mongoose";
+import { generateOTP } from "../../shared/util/generateOTP";
 
 export type TCreateUser = {
   firstName: string;
   lastName: string;
   email: string;
-  role: string;
+  role: CandidateRole | EmployerRole;
   password: string;
   loginProvider: LoginProvider;
 };
 
-// signup
-const createUser = async (user: TCreateUser): Promise<TBaseUser> => {
-  /*
-  1. check login provider
-  if (user.loginProvider === "linkedin") {
-    create user directly or if exist login send access token
+const getUserType = (role: CandidateRole | EmployerRole): string => {
+  if (Object.values(CandidateRole).includes(role as CandidateRole)) {
+    return "candidate";
+  } else if (Object.values(EmployerRole).includes(role as EmployerRole)) {
+    return "employer";
   }
-  2. check existing user by email
-  3. if exist and not verified than delete the (user and auth)
-  4. if exist and verified than throw error user exist
-  5. create auth entry
-  6. create user entry
-  7. send otp to email
-*/
-
-  if (user.loginProvider === LoginProvider.LINKEDIN) {
-    //TODO: implement linkedin login flow
-    console.log("Linkedin login flow");
-  } else {
-    console.log("Email signup flow");
-    //check existing user by email
-    const existingUser = await User.findOne({ email: user.email });
-    if (existingUser?.isVerified === false) {
-      //delete the existing user and auth
-      await User.findByIdAndDelete(existingUser._id);
-      await Auth.findByIdAndDelete(existingUser.authId);
-    }
-    // Check if the user already exists with verified
-    if (existingUser && existingUser.isVerified === true) {
-      throw new AppError(
-        StatusCodes.BAD_REQUEST,
-        "User already exists with email"
-      );
-    }
-    const authEntry = await Auth.create({
-      email: user.email,
-      password: user.password,
-      loginProvider: user.loginProvider
-    });
-  }
-  //! --------------------------
-
-  const existingUser = await User.findOne({ email: user.email });
-  if (existingUser?.isVerified === false) {
-    //delete the existing user
-    await User.findByIdAndDelete(existingUser._id);
-  }
-
-  const newUser = await User.create(user);
-  if (!newUser) {
-    throw new AppError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      "User creation failed"
-    );
-  }
-  await AuthService.resendOtp(newUser.email);
-
-  return newUser;
+  throw new AppError(StatusCodes.BAD_REQUEST, "Invalid user role");
 };
 
-//login
-const loginUserFromDB = async (payload: Partial<TLoginData>) => {
-  const { email, password, fcmToken } = payload;
-  console.log(payload);
-  if (!password) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Password is required");
+// signup
+const createUser = async (user: TCreateUser) => {
+  // Use transaction to prevent race conditions
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const existingUser = await User.findOne({ email: user.email }).session(
+        session
+      );
+
+      if (user.loginProvider === LoginProvider.LINKEDIN) {
+        if (existingUser) {
+          // Return existing user for LinkedIn
+          const accessToken = jwtHelper.createToken(
+            {
+              id: existingUser._id,
+              role: existingUser.role,
+              email: existingUser.email,
+              userType: existingUser.userType,
+            },
+            (config.jwt.jwt_secret as Secret) || "JWT_SECRET",
+            config.jwt.jwt_expire_in || "15m"
+          );
+          return { accessToken, user: existingUser };
+        }
+
+        const authEntry = await Auth.create(
+          [
+            {
+              email: user.email,
+              password: "",
+              loginProvider: user.loginProvider,
+            },
+          ],
+          { session }
+        );
+
+        if (!authEntry[0]) {
+          throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            "Auth creation failed"
+          );
+        }
+
+        const userType = getUserType(user.role);
+
+        const newUser = await User.create(
+          [
+            {
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+              role: user.role,
+              userType: userType,
+              isVerified: true,
+              authId: authEntry[0]._id,
+            },
+          ],
+          { session }
+        );
+
+        if (!newUser[0]) {
+          throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            "User creation failed"
+          );
+        }
+
+        const accessToken = jwtHelper.createToken(
+          {
+            id: newUser[0]._id,
+            role: newUser[0].role,
+            email: newUser[0].email,
+            userType: newUser[0].userType,
+          },
+          (config.jwt.jwt_secret as Secret) || "JWT_SECRET",
+          config.jwt.jwt_expire_in || "15m"
+        );
+
+        return { accessToken, user: newUser[0] };
+      } else {
+        // Email provider flow
+        if (existingUser && existingUser.isVerified === true) {
+          throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            "User already exists with email"
+          );
+        }
+
+        if (existingUser?.isVerified === false) {
+          // Delete the existing unverified user and auth
+          await Promise.all([
+            User.findByIdAndDelete(existingUser._id).session(session),
+            Auth.findByIdAndDelete(existingUser.authId).session(session),
+          ]);
+        }
+
+        const hashPassword = await bcrypt.hash(
+          user.password,
+          Number(process.env.BCRYPT_SALT_ROUNDS) || 12
+        );
+
+        const authEntry = await Auth.create(
+          [
+            {
+              email: user.email,
+              password: hashPassword,
+              loginProvider: user.loginProvider || LoginProvider.EMAIL,
+            },
+          ],
+          { session }
+        );
+
+        if (!authEntry[0]) {
+          throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            "Auth creation failed"
+          );
+        }
+
+        const userType = getUserType(user.role);
+
+        const newUser = await User.create(
+          [
+            {
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+              role: user.role,
+              userType: userType,
+              authId: authEntry[0]._id,
+            },
+          ],
+          { session }
+        );
+
+        if (!newUser[0]) {
+          throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            "User creation failed"
+          );
+        }
+        const accessToken = jwtHelper.createToken(
+          {
+            id: newUser[0]._id,
+            role: newUser[0].role,
+            email: newUser[0].email,
+            userType: newUser[0].userType,
+          },
+          (config.jwt.jwt_secret as Secret) || "JWT_SECRET",
+          config.jwt.jwt_expire_in || "15m"
+        );
+
+        return { user: newUser[0], accessToken };
+      }
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
+// login
+const loginUser = async (payload: TLoginData) => {
+  const { email, password, loginProvider } = payload;
+
+  if (loginProvider === LoginProvider.LINKEDIN) {
+    // For LinkedIn, we just want to ensure user exists and return token
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      // User exists, return token
+      const accessToken = jwtHelper.createToken(
+        {
+          id: existingUser._id,
+          role: existingUser.role,
+          email: existingUser.email,
+          userType: existingUser.userType,
+        },
+        (config.jwt.jwt_secret as Secret) || "JWT_SECRET",
+        config.jwt.jwt_expire_in || "15m"
+      );
+      return { accessToken, user: existingUser };
+    } else {
+      if (!payload.role) {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          "Role is required for LinkedIn signup"
+        );
+      }
+
+      const createUserPayload: TCreateUser = {
+        firstName: payload.firstName || "",
+        lastName: payload.lastName || "",
+        email,
+        role: payload.role,
+        loginProvider: LoginProvider.LINKEDIN,
+        password: "",
+      };
+
+      return createUser(createUserPayload);
+    }
   }
 
-  const isExistUser = await User.findOne({ email }).select("+password");
-  console.log(isExistUser);
-  if (!isExistUser) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
-  }
+  if (loginProvider === LoginProvider.EMAIL) {
+    if (!password) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Password is required");
+    }
 
-  //check user status
-  if (isExistUser.status === "delete") {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "Your account has been deleted, Please contact with admin"
+    const auth = await Auth.findOne({ email });
+    const isExistingUser = await User.findOne({ email });
+
+    if (!isExistingUser || !auth) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+    }
+
+    const hashedPassword = auth.password;
+    const isPasswordMatch = await bcrypt.compare(password, hashedPassword!);
+
+    if (!isPasswordMatch) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Password is incorrect!");
+    }
+
+    const accessToken = jwtHelper.createToken(
+      {
+        id: isExistingUser._id,
+        role: isExistingUser.role,
+        email: isExistingUser.email,
+        userType: isExistingUser.userType,
+      },
+      (config.jwt.jwt_secret as Secret) || "JWT_SECRET",
+      config.jwt.jwt_expire_in || "15m"
     );
+
+    return { accessToken, user: isExistingUser };
   }
-
-  //check match password
-  if (
-    password &&
-    !(await User.isMatchPassword(password, isExistUser.password))
-  ) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Password is incorrect!");
-  }
-
-  // Update FCM token if provided
-  if (fcmToken) {
-    await User.findByIdAndUpdate(isExistUser._id, { fcmToken });
-    console.log(`FCM token updated for user ${email}: ${fcmToken}`);
-  }
-
-  //create token
-  const accessToken = jwtHelper.createToken(
-    { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
-    config.jwt.jwt_secret as Secret,
-    "100y"
-  );
-
-  const { password: _, ...userWithoutPassword } = isExistUser.toObject();
-
-  return { accessToken, user: userWithoutPassword };
 };
 
 const forgetPasswordToDB = async (email: string) => {
-  const isExistUser: Partial<TUser> = await User.isExistUserByEmail(email);
+  const isExistUser = await User.findOne({ email });
   if (!isExistUser) {
     throw new AppError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
@@ -383,8 +524,10 @@ const logoutUser = async (userId: string) => {
 };
 
 export const AuthService = {
+  createUser,
+
   verifyEmailToDB,
-  loginUserFromDB,
+  loginUser,
   forgetPasswordToDB,
   resetPasswordToDB,
   changePasswordToDB,

@@ -6,9 +6,3 @@ export type TOneTimeCode = {
   oneTimeCodeHash: string;
   expireAt: Date;
 };
-export type TCreateOneTimeCode = {
-  userId: string;
-  reason: "account_verification" | "password_reset";
-  oneTimeCode: string;
-  expireAt: Date;
-};

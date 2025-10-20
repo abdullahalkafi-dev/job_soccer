@@ -17,6 +17,8 @@ const validateOneTimeCodeDto = z.object({
   oneTimeCode: z.string().length(6),
 });
 
+export type TCreateOneTimeCodeDto = z.infer<typeof createOneTimeCodeDto>;
+export type TValidateOneTimeCodeDto = z.infer<typeof validateOneTimeCodeDto>;
 export const OneTimeCodeDto = {
   createOneTimeCodeDto,
   validateOneTimeCodeDto,

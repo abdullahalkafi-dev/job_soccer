@@ -1,32 +1,26 @@
 import { z } from "zod";
 
-const createVerifyEmail = z.object({
+const loginUser = z.object({
   body: z
     .object({
-      email: z.string({ required_error: "Email is required" }),
-      oneTimeCode: z
-        .union([z.string().transform((val) => parseFloat(val)), z.number()])
-        .refine((val: any) => !isNaN(val), {
-          message: "One time code is required",
-        }),
+      email: z.string(),
+      password: z.string().optional(),
+      loginProvider: z.enum(["linkedin", "email"]),
     })
     .strict(),
 });
 
-const Login = z.object({
-  body: z
-    .object({
-      email: z.string({ required_error: "Email is required" }),
-      password: z.string({ required_error: "Password is required" }),
-      fcmToken: z.string().optional(),
-    })
-    .strict(),
-});
+
+
+
+
+
+
 
 const createForgetPassword = z.object({
   body: z
     .object({
-      email: z.string({ required_error: "Email is required" }),
+      email: z.string(),
     })
     .strict(),
 });
@@ -57,8 +51,7 @@ const createChangePassword = z.object({
 });
 
 export const AuthValidation = {
-  createVerifyEmail,
-  Login,
+  loginUser,
   createForgetPassword,
   createResetPassword,
   createChangePassword,

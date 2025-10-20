@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 
 import { AuthController } from "./auth.controller";
-import { AuthValidation } from "./auth.validation";
+import { AuthValidation } from "./auth.dto";
 import validateRequest from "../../shared/middlewares/validateRequest";
 const router = express.Router();
 

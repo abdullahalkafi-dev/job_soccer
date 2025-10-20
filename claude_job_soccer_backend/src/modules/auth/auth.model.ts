@@ -7,11 +7,10 @@ const authSchema = new Schema<TAuth>(
     password: { type: String, required: true },
     loginProvider: {
       type: String,
-      enum: ["EMAIL", "LINKEDIN"],
+      enum: ["linkedin", "email"],
       required: true,
     },
-    otp: { type: String, required: false },
-    otpExpireAt: { type: Date, required: false },
+
   },
   {
     timestamps: true,

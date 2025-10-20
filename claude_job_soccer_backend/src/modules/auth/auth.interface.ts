@@ -1,4 +1,5 @@
 import { Types } from "mongoose";
+import { CandidateRole, EmployerRole } from "../user/user.interface";
 export enum LoginProvider {
   LINKEDIN = "linkedin",
   EMAIL = "email",
@@ -9,8 +10,6 @@ export type TAuth = {
   email: string;
   password?: string;
   loginProvider: LoginProvider;
-  otp: string;
-  otpExpireAt: Date;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -23,7 +22,8 @@ export type TVerifyEmail = {
 export type TLoginData = {
   email: string;
   password: string;
-  phnNum: string;
-  loginStatus?: string;
-  fcmToken?: string;
+  loginProvider: LoginProvider;
+  role?: CandidateRole | EmployerRole;
+  firstName?: string;
+  lastName?: string;
 };
