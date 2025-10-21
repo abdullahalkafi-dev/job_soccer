@@ -24,10 +24,12 @@ const auth =
             token,
             config.jwt.jwt_secret as Secret
           );
+          console.log(verifyUser);
+          console.log(roles);
           //set user to header
           req.user = verifyUser;
           //guard user
-          if (roles.length && !roles.includes(verifyUser.role)) {
+          if (roles.length && !roles.includes(verifyUser.userType)) {
             throw new AppError(
               StatusCodes.FORBIDDEN,
               "You don't have permission to access this api"

@@ -70,7 +70,7 @@ const verifyEmailDto = z.object({
 const forgetPasswordDto = z.object({
   body: z
     .object({
-      email: z.string().min(1, "Email is required").email("Invalid email format"),
+      email: z.email("Invalid email format"),
     })
     .strict(),
 });
