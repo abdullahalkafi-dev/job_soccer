@@ -382,7 +382,7 @@ const resetPasswordToDB = async (
   token: string,
   payload: TAuthResetPassword
 ) => {
-  const { newPassword, confirmPassword } = payload;
+  const { newPassword } = payload;
   //isExist token
   const resetToken = await ResetToken.isExistToken(token);
   if (!resetToken) {
@@ -398,13 +398,6 @@ const resetPasswordToDB = async (
     );
   }
 
-  //check password
-  if (newPassword !== confirmPassword) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "New password and Confirm password doesn't match!"
-    );
-  }
 
   const hashPassword = await bcrypt.hash(
     newPassword,

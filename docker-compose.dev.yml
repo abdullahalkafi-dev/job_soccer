@@ -11,6 +11,50 @@ services:
       retries: 5
       start_period: 30s
       timeout: 10s
+  
+  mongodb_claude_job_soccer:
+    image: mongo:7
+    container_name: mongodb_claude_job_soccer_dev
+    ports:
+      - "27017:27017"
+    restart: always
+    entrypoint: ["/mongo-entrypoint.sh"]
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/data/mongodb-keyfile"]
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin123
+      - MONGO_INITDB_DATABASE=claude_job_soccer_dev
+    volumes:
+      - mongodb_data_dev:/data/db
+      - ./mongo-keyfile:/data/mongodb-keyfile
+      - ./mongo-entrypoint.sh:/mongo-entrypoint.sh:ro
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+  
+  mongodb_setup:
+    image: mongo:7
+    container_name: mongodb_setup_dev
+    depends_on:
+      mongodb_claude_job_soccer:
+        condition: service_healthy
+    command: >
+      mongosh --host mongodb_claude_job_soccer:27017 -u admin -p admin123 --authenticationDatabase admin --eval "
+      try {
+        rs.status();
+        print('Replica set already initialized');
+      } catch(err) {
+        rs.initiate({
+          _id: 'rs0',
+          members: [{ _id: 0, host: 'mongodb_claude_job_soccer:27017' }]
+        });
+        print('Replica set initialized');
+      }"
+    restart: "no"
   claude_job_soccer-backend:
     build:
       context: ./claude_job_soccer_backend
@@ -27,6 +71,8 @@ services:
     depends_on:
       redis_claude_job_soccer:
         condition: service_healthy
+      mongodb_claude_job_soccer:
+        condition: service_healthy
       elasticsearch:
         condition: service_healthy
     restart: always
@@ -35,6 +81,7 @@ services:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
       - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - MONGODB_URL=mongodb://admin:admin123@mongodb_claude_job_soccer_dev:27017/claude_job_soccer_dev?authSource=admin&replicaSet=rs0
 
   # Elasticsearch service
   elasticsearch:
@@ -72,3 +119,4 @@ services:
 volumes:
   node_modules:
   elasticsearch_data_dev:
+  mongodb_data_dev:

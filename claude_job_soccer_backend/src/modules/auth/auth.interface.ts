@@ -22,7 +22,6 @@ export type TVerifyEmail = {
 
 export type TAuthResetPassword = {
   newPassword: string;
-  confirmPassword: string;
 };
 export type TChangePassword={
   currentPassword:string;
