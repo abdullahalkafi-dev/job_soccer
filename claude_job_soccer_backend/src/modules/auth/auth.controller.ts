@@ -1,10 +1,25 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import catchAsync from "../../shared/util/catchAsync";
+import sendResponse from "../../shared/util/sendResponse";
+import { AuthService } from "./auth.service";
 
+// Create user (signup)
+const createUser = catchAsync(async (req: Request, res: Response) => {
+  const userData = req.body;
+  const result = await AuthService.createUser(userData);
 
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.CREATED,
+    message: "User created successfully",
+    data: null,
+  });
+});
+
+// Verify email
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
-  const { ...verifyData } = req.body;
-
+  const verifyData = req.body;
   const result = await AuthService.verifyEmailToDB(verifyData);
 
   sendResponse(res, {
@@ -15,38 +30,36 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Login user
 const loginUser = catchAsync(async (req: Request, res: Response) => {
-  const { ...loginData } = req.body;
-  const result: any = await AuthService.loginUserFromDB(loginData);
-
-  res.cookie("refreshToken", result.refreshToken, {
-    secure: config.node_env === "production",
-    httpOnly: true,
-  });
+  const loginData = req.body;
+  const result = await AuthService.loginUser(loginData);
 
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: "User login successfully",
+    message: "User logged in successfully",
     data: result,
   });
 });
 
+// Forget password
 const forgetPassword = catchAsync(async (req: Request, res: Response) => {
-  const email = req.body.email;
+  const { email } = req.body;
   const result = await AuthService.forgetPasswordToDB(email);
 
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: "Please check your email, we send a OTP!",
+    message: "Please check your email, we sent an OTP!",
     data: result,
   });
 });
 
+// Reset password
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const token = req.headers.authorization;
-  const { ...resetData } = req.body;
+  const resetData = req.body;
   const result = await AuthService.resetPasswordToDB(token!, resetData);
 
   sendResponse(res, {
@@ -57,9 +70,12 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Change password
 const changePassword = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
-  const { ...passwordData } = req.body;
+  const passwordData = req.body;
+  console.log("user",user);
+  
   await AuthService.changePasswordToDB(user, passwordData);
 
   sendResponse(res, {
@@ -69,6 +85,7 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Delete account
 const deleteAccount = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
   const result = await AuthService.deleteAccountToDB(user);
@@ -76,36 +93,26 @@ const deleteAccount = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: "Account Deleted successfully",
+    message: "Account deleted successfully",
     data: result,
   });
 });
+
+// Resend OTP
 const resendOtp = catchAsync(async (req: Request, res: Response) => {
-  const email = req.body.email;
-  const result = await AuthService.resendOtp(email);
+  const { email, reason } = req.body;
+  const result = await AuthService.resendOtp({ email, reason });
 
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: "Please check your email, we send a OTP!",
-    data: result,
-  });
-}
-);
-
-const logoutUser = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
-  const result = await AuthService.logoutUser(userId);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: StatusCodes.OK,
-    message: "Logged out successfully",
+    message: "Please check your email, we sent an OTP!",
     data: result,
   });
 });
 
 export const AuthController = {
+  createUser,
   verifyEmail,
   loginUser,
   forgetPassword,
@@ -113,5 +120,4 @@ export const AuthController = {
   changePassword,
   deleteAccount,
   resendOtp,
-  logoutUser,
 };

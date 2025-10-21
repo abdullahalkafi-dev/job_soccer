@@ -4,7 +4,13 @@ import { JwtPayload, Secret } from "jsonwebtoken";
 import AppError from "../../errors/AppError";
 
 import bcrypt from "bcryptjs";
-import { LoginProvider, TLoginData } from "./auth.interface";
+import {
+  LoginProvider,
+  TAuthResetPassword,
+  TChangePassword,
+  TLoginData,
+  TVerifyEmail,
+} from "./auth.interface";
 import { CandidateRole, EmployerRole, TBaseUser } from "../user/user.interface";
 import { User } from "../user/user.model";
 import { Auth } from "./auth.model";
@@ -12,6 +18,12 @@ import { jwtHelper } from "../../shared/util/jwtHelper";
 import config from "../../config";
 import mongoose from "mongoose";
 import { generateOTP } from "../../shared/util/generateOTP";
+import { emailSender } from "../../shared/email/email.sender";
+import { emailTemplate } from "../../shared/email/email.template";
+import { OtpService } from "../oneTimeCode/otp.service";
+import { ResetToken } from "../resetToken/resetToken.model";
+import { generateCryptoToken } from "../../shared/util/generateCryptoToken";
+import { OneTimeCode } from "../oneTimeCode/otp.model";
 
 export type TCreateUser = {
   firstName: string;
@@ -52,7 +64,7 @@ const createUser = async (user: TCreateUser) => {
               userType: existingUser.userType,
             },
             (config.jwt.jwt_secret as Secret) || "JWT_SECRET",
-            config.jwt.jwt_expire_in || "15m"
+            config.jwt.jwt_expire_in || "1d"
           );
           return { accessToken, user: existingUser };
         }
@@ -107,7 +119,7 @@ const createUser = async (user: TCreateUser) => {
             userType: newUser[0].userType,
           },
           (config.jwt.jwt_secret as Secret) || "JWT_SECRET",
-          config.jwt.jwt_expire_in || "15m"
+          config.jwt.jwt_expire_in || "1d"
         );
 
         return { accessToken, user: newUser[0] };
@@ -125,6 +137,9 @@ const createUser = async (user: TCreateUser) => {
           await Promise.all([
             User.findByIdAndDelete(existingUser._id).session(session),
             Auth.findByIdAndDelete(existingUser.authId).session(session),
+            OneTimeCode.findOneAndDelete({
+              userId: existingUser._id.toString(),
+            }).session(session),
           ]);
         }
 
@@ -181,9 +196,26 @@ const createUser = async (user: TCreateUser) => {
             userType: newUser[0].userType,
           },
           (config.jwt.jwt_secret as Secret) || "JWT_SECRET",
-          config.jwt.jwt_expire_in || "15m"
+          config.jwt.jwt_expire_in || "1d"
         );
 
+        const otp = generateOTP();
+        console.log(otp, "otp");
+        const emailHtml = emailTemplate.createAccount({
+          email: newUser[0].email,
+          name: newUser[0].firstName,
+          otp: otp,
+          theme: "theme-green",
+          expiresIn: 30,
+        });
+        await OtpService.createOtpEntry({
+          userId: newUser[0]._id.toString(),
+          expireAt: new Date(Date.now() + 30 * 60000),
+          oneTimeCode: otp,
+          reason: "account_verification",
+        });
+
+        emailSender.sendEmail(emailHtml);
         return { user: newUser[0], accessToken };
       }
     });
@@ -210,7 +242,7 @@ const loginUser = async (payload: TLoginData) => {
           userType: existingUser.userType,
         },
         (config.jwt.jwt_secret as Secret) || "JWT_SECRET",
-        config.jwt.jwt_expire_in || "15m"
+        config.jwt.jwt_expire_in || "1d"
       );
       return { accessToken, user: existingUser };
     } else {
@@ -238,7 +270,6 @@ const loginUser = async (payload: TLoginData) => {
     if (!password) {
       throw new AppError(StatusCodes.BAD_REQUEST, "Password is required");
     }
-
     const auth = await Auth.findOne({ email });
     const isExistingUser = await User.findOne({ email });
 
@@ -261,9 +292,8 @@ const loginUser = async (payload: TLoginData) => {
         userType: isExistingUser.userType,
       },
       (config.jwt.jwt_secret as Secret) || "JWT_SECRET",
-      config.jwt.jwt_expire_in || "15m"
+      config.jwt.jwt_expire_in || "1d"
     );
-
     return { accessToken, user: isExistingUser };
   }
 };
@@ -287,26 +317,26 @@ const forgetPasswordToDB = async (email: string) => {
       | "theme-purple"
       | "theme-orange"
       | "theme-blue",
-    expiresIn: 15,
   };
   const forgetPassword = emailTemplate.resetPassword(value);
 
-  emailHelper.sendEmail(forgetPassword);
+  emailSender.sendEmail(forgetPassword);
 
   //save to DB
-  const authentication = {
+  await OtpService.createOtpEntry({
+    userId: isExistUser._id.toString(),
+    expireAt: new Date(Date.now() + 30 * 60000),
     oneTimeCode: otp,
-    expireAt: new Date(Date.now() + 15 * 60000),
-  };
-
-  await User.findOneAndUpdate({ email }, { $set: { authentication } });
+    reason: "password_reset",
+  });
+  return { message: "OTP sent to your email" };
 };
 
 //verify email
 const verifyEmailToDB = async (payload: TVerifyEmail) => {
   const { email, oneTimeCode } = payload;
   console.log(oneTimeCode, "new code");
-  const isExistUser = await User.findOne({ email }).select("+authentication");
+  const isExistUser = await User.findOne({ email });
   if (!isExistUser) {
     throw new AppError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
@@ -317,44 +347,31 @@ const verifyEmailToDB = async (payload: TVerifyEmail) => {
       "Please give the otp, check your email we send a code"
     );
   }
-  console.log(isExistUser.authentication?.oneTimeCode, "old code");
-  if (isExistUser.authentication?.oneTimeCode !== oneTimeCode) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "You provided wrong otp");
-  }
-
-  const date = new Date();
-  if (date > isExistUser.authentication?.expireAt) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "Otp already expired, Please try again"
-    );
-  }
-
-  let message;
-  let data;
-
-  await User.findOneAndUpdate(
-    { _id: isExistUser._id },
-    {
-      verified: true,
-      authentication: {
-        isResetPassword: true,
-        oneTimeCode: null,
-        expireAt: null,
-      },
-    }
-  );
-
-  //create token ;
-  const createToken = cryptoToken();
-  await ResetToken.create({
-    user: isExistUser._id,
-    token: createToken,
-    expireAt: new Date(Date.now() + 15 * 60000),
+  const isOtpValid = await OtpService.validateOtp({
+    userId: isExistUser._id.toString(),
+    oneTimeCode,
+    reason: payload.reason || "account_verification",
   });
-  message =
-    "Verification Successful: Please securely store and utilize this code for reset password";
-  data = createToken;
+  if (!isOtpValid) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Invalid or expired OTP");
+  }
+  //create token ;
+
+  let data = null;
+  let message = "Account verified successfully";
+  if (payload.reason != "account_verification") {
+    const createToken = generateCryptoToken();
+    await ResetToken.create({
+      user: isExistUser._id,
+      token: createToken,
+      expireAt: new Date(Date.now() + 30 * 60000),
+    });
+    message =
+      "Verification Successful: Please securely store and utilize this code for reset password";
+    data = createToken;
+  } else {
+    await User.findByIdAndUpdate(isExistUser._id, { isVerified: true });
+  }
 
   return { data, message };
 };
@@ -366,20 +383,9 @@ const resetPasswordToDB = async (
 ) => {
   const { newPassword, confirmPassword } = payload;
   //isExist token
-  const isExistToken = await ResetToken.isExistToken(token);
-  if (!isExistToken) {
+  const resetToken = await ResetToken.isExistToken(token);
+  if (!resetToken) {
     throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized");
-  }
-
-  //user permission check
-  const isExistUser = await User.findById(isExistToken.user).select(
-    "+authentication"
-  );
-  if (!isExistUser?.authentication?.isResetPassword) {
-    throw new AppError(
-      StatusCodes.UNAUTHORIZED,
-      "You don't have permission to change the password. Please click again to 'Forgot Password'"
-    );
   }
 
   //validity check
@@ -406,32 +412,45 @@ const resetPasswordToDB = async (
 
   const updateData = {
     password: hashPassword,
-    authentication: {
-      isResetPassword: false,
-    },
   };
 
-  await User.findOneAndUpdate({ _id: isExistToken.user }, updateData, {
-    new: true,
-  });
+  const userId = resetToken.user;
+  const isExistUser = await User.findById(userId);
+  if (!isExistUser) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+  }
+
+  if (!isExistUser.authId) {
+    throw new AppError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      "Auth entry missing for user"
+    );
+  }
+  await Auth.findByIdAndUpdate(isExistUser.authId, updateData, { new: true });
+  // Invalidate the reset token after successful use
+  await ResetToken.findOneAndDelete({ token });
+
+  return { message: "Password reset successfully" };
 };
 
 const changePasswordToDB = async (
   user: JwtPayload,
   payload: TChangePassword
 ) => {
-  const { currentPassword, newPassword, confirmPassword } = payload;
-  const isExistUser = await User.findById(user.id).select("+password");
-  if (!isExistUser) {
+  console.log(user,payload);
+  const { currentPassword, newPassword } = payload;
+  const isExistUser = await User.findById(user.id).select("authId");
+  const authEntry = await Auth.findById(isExistUser?.authId);
+  if (!isExistUser || !authEntry) {
     throw new AppError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
-
-  //current password match
-  if (
-    currentPassword &&
-    !(await User.isMatchPassword(currentPassword, isExistUser.password))
-  ) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Password is incorrect");
+  //check current password is correct
+  const isPasswordMatched = bcrypt.compare(
+    currentPassword,
+    authEntry?.password!
+  );
+  if (!isPasswordMatched) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "incorrect current password");
   }
 
   //newPassword and current password
@@ -441,29 +460,20 @@ const changePasswordToDB = async (
       "Please give different password from current password"
     );
   }
-  //new password and confirm password check
-  if (newPassword !== confirmPassword) {
-    throw new AppError(
-      StatusCodes.BAD_REQUEST,
-      "Password and Confirm password doesn't matched"
-    );
-  }
 
   //hash password
   const hashPassword = await bcrypt.hash(
     newPassword,
-    Number(config.bcrypt_salt_rounds)
+    Number(config.bcrypt_salt_rounds || 12)
   );
 
   const updateData = {
     password: hashPassword,
   };
-  await User.findOneAndUpdate({ _id: user.id }, updateData, { new: true });
+  await Auth.findByIdAndUpdate(authEntry._id, updateData, { new: true });
+  //TODO: send email notification about password change
 
-  const value = {
-    receiver: isExistUser._id,
-    text: "Your password changed successfully",
-  };
+  return null;
 };
 
 const deleteAccountToDB = async (user: JwtPayload) => {
@@ -475,12 +485,17 @@ const deleteAccountToDB = async (user: JwtPayload) => {
   if (!result) {
     throw new AppError(StatusCodes.NOT_FOUND, "No User found");
   }
-  await UserCacheManage.updateUserCache(user.id);
-
-  return result;
+  return null;
 };
+
 //resend otp
-const resendOtp = async (email: string) => {
+const resendOtp = async ({
+  email,
+  reason,
+}: {
+  email: string;
+  reason: string;
+}) => {
   const isExistUser = await User.findOne({
     email,
   });
@@ -503,29 +518,27 @@ const resendOtp = async (email: string) => {
       | "theme-blue",
     expiresIn: 30,
   };
-  const createAccount = emailTemplate.createAccount(value);
-
-  emailHelper.sendEmail(createAccount);
+  if (reason === "account_verification") {
+    const createAccount = emailTemplate.createAccount(value);
+    emailSender.sendEmail(createAccount);
+  }
+  if (reason === "password_reset") {
+    const resetPassword = emailTemplate.resetPassword(value);
+    emailSender.sendEmail(resetPassword);
+  }
 
   //save to DB
-  const authentication = {
-    oneTimeCode: otp,
+  await OtpService.createOtpEntry({
+    userId: isExistUser._id.toString(),
     expireAt: new Date(Date.now() + 30 * 60000),
-  };
-
-  await User.findOneAndUpdate({ email }, { $set: { authentication } });
-};
-
-const logoutUser = async (userId: string) => {
-  // Remove FCM token on logout for security
-  await User.findByIdAndUpdate(userId, { $unset: { fcmToken: 1 } });
-  console.log(`User ${userId} logged out, FCM token removed`);
-  return { message: "Logged out successfully" };
+    oneTimeCode: otp,
+    reason: reason as "account_verification" | "password_reset",
+  });
+  return null;
 };
 
 export const AuthService = {
   createUser,
-
   verifyEmailToDB,
   loginUser,
   forgetPasswordToDB,
@@ -533,5 +546,4 @@ export const AuthService = {
   changePasswordToDB,
   deleteAccountToDB,
   resendOtp,
-  logoutUser,
 };

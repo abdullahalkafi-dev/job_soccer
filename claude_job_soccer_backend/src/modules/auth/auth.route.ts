@@ -1,45 +1,67 @@
 import express, { Router } from "express";
-
 import { AuthController } from "./auth.controller";
 import { AuthValidation } from "./auth.dto";
 import validateRequest from "../../shared/middlewares/validateRequest";
+import auth from "../../shared/middlewares/auth";
+import { UserType } from "../user/user.interface";
+
 const router = express.Router();
 
+// Signup route
+router.post(
+  "/signup",
+  validateRequest(AuthValidation.createUserDto),
+  AuthController.createUser
+);
+
+// Login route
 router.post(
   "/login",
-  validateRequest(AuthValidation.Login),
+  validateRequest(AuthValidation.loginUserDto),
   AuthController.loginUser
 );
-router.post(
-  "/forgot-password",
-  validateRequest(AuthValidation.createForgetPassword),
-  AuthController.forgetPassword
-);
+
+// Verify email route
 router.post(
   "/verify-email",
-  validateRequest(AuthValidation.createVerifyEmail),
+  validateRequest(AuthValidation.verifyEmailDto),
   AuthController.verifyEmail
 );
+
+// Forgot password route
+router.post(
+  "/forgot-password",
+  validateRequest(AuthValidation.forgetPasswordDto),
+  AuthController.forgetPassword
+);
+
+// Reset password route
 router.post(
   "/reset-password",
-  validateRequest(AuthValidation.createResetPassword),
+  validateRequest(AuthValidation.resetPasswordDto),
   AuthController.resetPassword
 );
-router.delete(
-  "/delete-account",
-  // auth(USER_ROLES.USER),
-  AuthController.deleteAccount
-);
+
+// Change password route (requires authentication)
 router.post(
   "/change-password",
-  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
-  validateRequest(AuthValidation.createChangePassword),
+  auth(UserType.ADMIN, UserType.EMPLOYER, UserType.CANDIDATE),
+  validateRequest(AuthValidation.changePasswordDto),
   AuthController.changePassword
 );
-router.post("/send-otp", AuthController.resendOtp);
+
+// Resend OTP route
 router.post(
-  "/logout",
-  auth(USER_ROLES.USER, USER_ROLES.ADMIN),
-  AuthController.logoutUser
+  "/resend-otp",
+  validateRequest(AuthValidation.resendOtpDto),
+  AuthController.resendOtp
 );
+
+// Delete account route (requires authentication)
+router.delete(
+  "/delete-account",
+  auth(UserType.ADMIN, UserType.EMPLOYER, UserType.CANDIDATE),
+  AuthController.deleteAccount
+);
+
 export const AuthRoutes: Router = router;

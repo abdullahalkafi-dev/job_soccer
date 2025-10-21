@@ -3,6 +3,7 @@ import { Model, Types } from "mongoose";
 export enum UserType {
   CANDIDATE = "candidate",
   EMPLOYER = "employer",
+  ADMIN = "admin",
 }
 export enum CandidateRole {
   PROFESSIONAL_PLAYER = "Professional Player",
@@ -30,6 +31,7 @@ export type TBaseUser = {
   profileId: string;
   userType: UserType;
   isVerified: boolean;
+  isDeleted?: boolean;
   authId: Types.ObjectId;
 };
 

@@ -14,6 +14,7 @@ const oneTimeCodeSchema = new Schema<TOneTimeCode>({
 
 oneTimeCodeSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
 oneTimeCodeSchema.index({ userId: 1, reason: 1 });
+oneTimeCodeSchema.index({ userId: 1 });
 export const OneTimeCode = model<TOneTimeCode>(
   "OneTimeCode",
   oneTimeCodeSchema

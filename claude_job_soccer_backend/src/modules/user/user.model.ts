@@ -63,6 +63,7 @@ const userSchema = new Schema<TBaseUser>(
       enum: ["candidate", "employer", "admin"],
       required: true,
     },
+    isDeleted: { type: Boolean, default: false },
   },
   {
     timestamps: true,

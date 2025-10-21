@@ -8,14 +8,14 @@ import { TOneTimeCode } from "./otp.interface";
 import { OneTimeCode } from "./otp.model";
 import bcrypt from "bcryptjs";
 const createOtpEntry = async (
-  otpEntry: Partial<TCreateOneTimeCodeDto>
+  otpEntry: TCreateOneTimeCodeDto
 ): Promise<Partial<TOneTimeCode>> => {
   const parseResult = OneTimeCodeDto.createOneTimeCodeDto.safeParse(otpEntry);
   if (!parseResult.success) {
     throw new AppError(400, "Invalid OTP entry");
   }
 
-  await OneTimeCode.findOneAndDelete({
+const oldOtpEntry = await OneTimeCode.findOneAndDelete({
     userId: parseResult.data.userId,
     reason: parseResult.data.reason,
   });
@@ -56,6 +56,13 @@ const validateOtp = async ({
   if (!isValid) {
     throw new AppError(400, "Invalid OTP");
   }
+  const expireAt = otpEntry.expireAt ? new Date(otpEntry.expireAt) : null;
+  if (expireAt && !isNaN(expireAt.getTime()) && expireAt < new Date()) {
+    await OneTimeCode.findByIdAndDelete(otpEntry._id);
+    throw new AppError(400, "OTP expired");
+  }
+
+  await OneTimeCode.findByIdAndDelete(otpEntry._id);
   return true;
 };
 

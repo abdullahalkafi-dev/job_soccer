@@ -7,10 +7,13 @@ import { logger } from '../logger/logger';
 const transporter = nodemailer.createTransport({
   host: config.email.host,
   port: Number(config.email.port),
-  secure: false,
+  secure: config.email.port === '465', // true for 465, false for other ports
   auth: {
     user: config.email.user,
     pass: config.email.pass,
+  },
+  tls: {
+    rejectUnauthorized: false, // For development only
   },
 });
 

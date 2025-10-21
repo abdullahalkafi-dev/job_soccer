@@ -30,7 +30,6 @@ const themes = {
 
 const createAccount = (values: TCreateAccount) => {
   const theme = themes[values.theme] ?? themes["theme-blue"];
-
   const data = {
     to: values.email,
     subject: "Verify your account",

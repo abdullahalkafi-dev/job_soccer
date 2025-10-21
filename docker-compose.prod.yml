@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile.prod
     container_name: claude_job_soccer-backend_prod
     ports:
-      - "5011:5011"
+      - "5013:5013"
     env_file:
       - ./claude_job_soccer_backend/.env.production
     volumes:

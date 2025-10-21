@@ -17,7 +17,17 @@ export type TAuth = {
 export type TVerifyEmail = {
   email: string;
   oneTimeCode: string;
+  reason: "account_verification" | "password_reset";
 };
+
+export type TAuthResetPassword = {
+  newPassword: string;
+  confirmPassword: string;
+};
+export type TChangePassword={
+  currentPassword:string;
+  newPassword:string;
+}
 
 export type TLoginData = {
   email: string;

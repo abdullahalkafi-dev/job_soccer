@@ -1,20 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import { UserServices } from "./user.service";
-import catchAsync from "../../../shared/catchAsync";
-import sendResponse from "../../../shared/sendResponse";
+import catchAsync from "../../shared/util/catchAsync";
+import sendResponse from "../../shared/util/sendResponse";
 
-const createUser = catchAsync(async (req: Request, res: Response) => {
-  console.log(req.body);
 
-  const user = await UserServices.createUser(req.body);
-  sendResponse(res, {
-    statusCode: StatusCodes.CREATED,
-    success: true,
-    message: "User created successfully",
-    data: user,
-  });
-});
+
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const usersRes = await UserServices.getAllUsers(req.query);
@@ -104,26 +95,12 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-//update FCM token
-const updateFcmToken = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
-  const { fcmToken } = req.body;
-  const result = await UserServices.updateFcmToken(userId, fcmToken);
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "FCM token updated successfully",
-    data: result,
-  });
-});
 
 export const UserController = {
-  createUser,
   getAllUsers,
   getUserById,
   updateUser,
   updateUserActivationStatus,
   updateUserRole,
   getMe,
-  updateFcmToken,
 };

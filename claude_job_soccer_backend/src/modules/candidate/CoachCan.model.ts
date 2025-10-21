@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { countryList } from "../../../types/global";
+import { countryList } from "../../shared/constant/country.constant";
 
 enum TPosition {
   ASSISTANT_COACH = "Assistant Coach",

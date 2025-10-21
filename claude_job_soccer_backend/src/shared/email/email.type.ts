@@ -1,5 +1,4 @@
-import { emailSender } from "./email.sender";
-import { emailTemplate } from "./email.template";
+
 
 export type TCreateAccount = {
   name: string;
@@ -11,6 +10,7 @@ export type TCreateAccount = {
     | "theme-purple"
     | "theme-orange"
     | "theme-blue";
+  expiresIn?: Number;
 };
 
 export type TResetPassword = {
@@ -23,7 +23,7 @@ export type TResetPassword = {
     | "theme-purple"
     | "theme-orange"
     | "theme-blue";
-    expiresIn?: Number;
+  expiresIn?: Number;
 };
 
 export type ISendEmail = {
