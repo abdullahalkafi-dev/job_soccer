@@ -12,9 +12,10 @@ services:
       start_period: 30s
       timeout: 10s
   
-  mongodb_claude_job_soccer:
+  # ================== MONGODB 3-NODE REPLICA SET ==================
+  mongodb_primary:
     image: mongo:7
-    container_name: mongodb_claude_job_soccer_dev
+    container_name: mongodb_primary_dev
     ports:
       - "27017:27017"
     restart: always
@@ -25,10 +26,54 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=admin123
       - MONGO_INITDB_DATABASE=claude_job_soccer_dev
     volumes:
-      - mongodb_data_dev:/data/db
+      - mongodb_primary_data:/data/db
       - ./mongo-keyfile:/data/mongodb-keyfile
       - ./mongo-entrypoint.sh:/mongo-entrypoint.sh:ro
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+  
+  mongodb_secondary1:
+    image: mongo:7
+    container_name: mongodb_secondary1_dev
+    ports:
+      - "27018:27017"
+    restart: always
+    entrypoint: ["/mongo-entrypoint.sh"]
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/data/mongodb-keyfile"]
+    volumes:
+      - mongodb_secondary1_data:/data/db
+      - ./mongo-keyfile:/data/mongodb-keyfile
+      - ./mongo-entrypoint.sh:/mongo-entrypoint.sh:ro
+    depends_on:
+      mongodb_primary:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+  
+  mongodb_secondary2:
+    image: mongo:7
+    container_name: mongodb_secondary2_dev
+    ports:
+      - "27019:27017"
+    restart: always
+    entrypoint: ["/mongo-entrypoint.sh"]
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/data/mongodb-keyfile"]
+    volumes:
+      - mongodb_secondary2_data:/data/db
+      - ./mongo-keyfile:/data/mongodb-keyfile
+      - ./mongo-entrypoint.sh:/mongo-entrypoint.sh:ro
+    depends_on:
+      mongodb_primary:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -40,19 +85,31 @@ services:
     image: mongo:7
     container_name: mongodb_setup_dev
     depends_on:
-      mongodb_claude_job_soccer:
+      mongodb_primary:
+        condition: service_healthy
+      mongodb_secondary1:
+        condition: service_healthy
+      mongodb_secondary2:
         condition: service_healthy
     command: >
-      mongosh --host mongodb_claude_job_soccer:27017 -u admin -p admin123 --authenticationDatabase admin --eval "
+      mongosh --host mongodb_primary:27017 -u admin -p admin123 --authenticationDatabase admin --eval "
       try {
-        rs.status();
-        print('Replica set already initialized');
+        const status = rs.status();
+        print('Replica set already initialized: ' + status.set);
       } catch(err) {
+        print('Initializing 3-node replica set...');
         rs.initiate({
           _id: 'rs0',
-          members: [{ _id: 0, host: 'mongodb_claude_job_soccer:27017' }]
+          members: [
+            { _id: 0, host: 'mongodb_primary:27017', priority: 2 },
+            { _id: 1, host: 'mongodb_secondary1:27017', priority: 1 },
+            { _id: 2, host: 'mongodb_secondary2:27017', priority: 1 }
+          ]
         });
-        print('Replica set initialized');
+        print('Replica set initialized successfully!');
+        print('Primary: mongodb_primary:27017');
+        print('Secondary1: mongodb_secondary1:27017');
+        print('Secondary2: mongodb_secondary2:27017');
       }"
     restart: "no"
   claude_job_soccer-backend:
@@ -71,7 +128,7 @@ services:
     depends_on:
       redis_claude_job_soccer:
         condition: service_healthy
-      mongodb_claude_job_soccer:
+      mongodb_primary:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
@@ -81,7 +138,7 @@ services:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
       - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - MONGODB_URL=mongodb://admin:admin123@mongodb_claude_job_soccer_dev:27017/claude_job_soccer_dev?authSource=admin&replicaSet=rs0
+      - MONGODB_URL=mongodb://admin:admin123@mongodb_primary:27017,mongodb_secondary1:27017,mongodb_secondary2:27017/claude_job_soccer_dev?authSource=admin&replicaSet=rs0&readPreference=secondaryPreferred
 
   # Elasticsearch service
   elasticsearch:
@@ -119,4 +176,6 @@ services:
 volumes:
   node_modules:
   elasticsearch_data_dev:
-  mongodb_data_dev:
+  mongodb_primary_data:
+  mongodb_secondary1_data:
+  mongodb_secondary2_data:

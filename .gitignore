@@ -67,6 +67,8 @@ Desktop.ini
 # Docker
 docker-compose.override.yml
 docker-compose.override.*.yml
+# MongoDB keyfile
+mongo-keyfile
 
 # IDEs
 .idea/
