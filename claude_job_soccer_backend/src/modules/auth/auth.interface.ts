@@ -35,4 +35,5 @@ export type TLoginData = {
   role?: CandidateRole | EmployerRole;
   firstName?: string;
   lastName?: string;
+  userType?: string;
 };

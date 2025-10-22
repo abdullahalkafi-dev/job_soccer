@@ -95,6 +95,21 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+//add user profile
+const addUserProfile = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id; // Or req.params.id depending on your route
+  const result = await UserServices.addUserProfile({
+    userId,
+    data: req.body,
+  });
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: "User profile created successfully",
+    data: result,
+  });
+});
+
 
 export const UserController = {
   getAllUsers,
@@ -103,4 +118,5 @@ export const UserController = {
   updateUserActivationStatus,
   updateUserRole,
   getMe,
+  addUserProfile,
 };

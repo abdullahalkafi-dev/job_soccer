@@ -37,6 +37,7 @@ const createUserDto = z.object({
       role: z.enum(allRoles, "Invalid role selected"),
       password: z.string().optional(),
       loginProvider: z.enum(["linkedin", "email"]),
+      userType: z.enum(["candidate", "employer"]).optional(),
     })
     .strict(),
 });
@@ -51,6 +52,7 @@ const loginUserDto = z.object({
       role: z.enum(allRoles, "Invalid role selected").optional(),
       firstName: z.string().optional(),
       lastName: z.string().optional(),
+      userType: z.enum(["candidate", "employer"]).optional(),
     })
     .strict(),
 });

@@ -32,14 +32,32 @@ export type TCreateUser = {
   role: CandidateRole | EmployerRole;
   password: string;
   loginProvider: LoginProvider;
+  userType?: string;
 };
 
-const getUserType = (role: CandidateRole | EmployerRole): string => {
-  if (Object.values(CandidateRole).includes(role as CandidateRole)) {
+const getUserType = (role: CandidateRole | EmployerRole, userType?: string): string => {
+  // If userType is explicitly provided, use it
+  if (userType) {
+    return userType;
+  }
+  
+  // Check if the role exists in CandidateRole enum
+  const isCandidateRole = Object.values(CandidateRole).includes(role as CandidateRole);
+  const isEmployerRole = Object.values(EmployerRole).includes(role as EmployerRole);
+ 
+  if (isCandidateRole && isEmployerRole) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST, 
+      "Ambiguous role. Please specify user type explicitly."
+    );
+  }
+  
+  if (isCandidateRole) {
     return "candidate";
-  } else if (Object.values(EmployerRole).includes(role as EmployerRole)) {
+  } else if (isEmployerRole) {
     return "employer";
   }
+  
   throw new AppError(StatusCodes.BAD_REQUEST, "Invalid user role");
 };
 
@@ -88,7 +106,7 @@ const createUser = async (user: TCreateUser) => {
             );
           }
 
-          const userType = getUserType(user.role);
+          const userType = getUserType(user.role, user.userType);
 
           const newUser = await User.create(
             [
@@ -167,7 +185,7 @@ const createUser = async (user: TCreateUser) => {
             );
           }
 
-          const userType = getUserType(user.role);
+          const userType = getUserType(user.role, user.userType);
 
           const newUser = await User.create(
             [
@@ -262,6 +280,7 @@ const loginUser = async (payload: TLoginData) => {
         role: payload.role,
         loginProvider: LoginProvider.LINKEDIN,
         password: "",
+        userType: payload.userType,
       };
 
       return createUser(createUserPayload);

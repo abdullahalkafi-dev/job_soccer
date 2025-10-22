@@ -36,6 +36,9 @@ const fileUploadHandler = (req: Request, res: Response, next: NextFunction) => {
         case "docs":
           uploadDir = path.join(baseUploadDir, "docs");
           break;
+        case "videos":
+          uploadDir = path.join(baseUploadDir, "videos");
+          break;
         default:
           throw new AppError(StatusCodes.BAD_REQUEST, "File is not supported");
       }
@@ -49,6 +52,9 @@ const fileUploadHandler = (req: Request, res: Response, next: NextFunction) => {
         fileExt = ".pdf";
       } else if (file.fieldname === "image") {
         fileExt = ".tmp"; // will be converted to .webp later
+      } else if (file.fieldname === "videos") {
+        // Retain original video extension
+        fileExt = path.extname(file.originalname);
       } else {
         // For media, retain the original extension
         fileExt = path.extname(file.originalname);
@@ -101,6 +107,24 @@ const fileUploadHandler = (req: Request, res: Response, next: NextFunction) => {
       } else {
         cb(new AppError(StatusCodes.BAD_REQUEST, "Only pdf supported"));
       }
+    } else if (file.fieldname === "videos") {
+      const allowedMimeTypes = [
+        "video/mp4",
+        "video/quicktime", // .mov
+        "video/x-msvideo", // .avi
+        "video/webm",
+      ];
+
+      if (allowedMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(
+          new AppError(
+            StatusCodes.BAD_REQUEST,
+            "Only .mp4, .mov, .avi, .webm video files supported"
+          )
+        );
+      }
     } else {
       throw new AppError(StatusCodes.BAD_REQUEST, "This file is not supported");
     }
@@ -115,6 +139,7 @@ const fileUploadHandler = (req: Request, res: Response, next: NextFunction) => {
     { name: "media", maxCount: 10 },
     { name: "doc", maxCount: 10 },
     { name: "docs", maxCount: 10 },
+    { name: "videos", maxCount: 5 },
   ]);
   // Execute the multer middleware
   upload(req, res, async (err: any) => {

@@ -1,6 +1,6 @@
 import express, { Router } from "express";
 import { UserController } from "./user.controller";
-import { UserValidation } from "./user.validation";
+import { UserValidation } from "./user.dto";
 import fileUploadHandler from "../../shared/middlewares/fileUploadHandler";
 import auth from "../../shared/middlewares/auth";
 import validateRequest from "../../shared/middlewares/validateRequest";

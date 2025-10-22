@@ -1,5 +1,5 @@
 import { model, Schema } from "mongoose";
-import { countryList } from "../../shared/constant/country.constant";
+import { countryList } from "../../../shared/constant/country.constant";
 
 enum TNationalTeamCategory {
   U14 = "U14",

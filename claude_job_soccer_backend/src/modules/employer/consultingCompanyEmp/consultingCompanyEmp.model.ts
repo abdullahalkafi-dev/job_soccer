@@ -1,27 +1,44 @@
 import { model, Schema } from "mongoose";
-import { countryList } from "../../shared/constant/country.constant";
+import { countryList } from "../../../shared/constant/country.constant";
 
-export type TProfessionalClubEmp = {
+export type TConsultingCompanyEmp = {
+  clubName: string;
   country: (typeof countryList)[number];
   address: string;
+  founded: string;
+  nationality: string;
+  position: string;
   location: string;
   level: string;
-  founded: string;
   website: string;
-  nationality: string;
   phoneNumber: string;
-  clubName: string;
   clubContact: string;
   clubDescription: string;
 };
 
-const professionalClubEmpSchema = new Schema<TProfessionalClubEmp>({
+const consultingCompanyEmpSchema = new Schema<TConsultingCompanyEmp>({
+  clubName: {
+    type: String,
+    required: true,
+  },
   country: {
     type: String,
     enum: countryList,
     required: true,
   },
   address: {
+    type: String,
+    required: true,
+  },
+  founded: {
+    type: String,
+    required: true,
+  },
+  nationality: {
+    type: String,
+    required: true,
+  },
+  position: {
     type: String,
     required: true,
   },
@@ -33,23 +50,11 @@ const professionalClubEmpSchema = new Schema<TProfessionalClubEmp>({
     type: String,
     required: true,
   },
-  founded: {
-    type: String,
-    required: true,
-  },
   website: {
     type: String,
     required: true,
   },
-  nationality: {
-    type: String,
-    required: true,
-  },
   phoneNumber: {
-    type: String,
-    required: true,
-  },
-  clubName: {
     type: String,
     required: true,
   },
@@ -62,7 +67,8 @@ const professionalClubEmpSchema = new Schema<TProfessionalClubEmp>({
     required: true,
   },
 });
-export const ProfessionalClubEmp = model<TProfessionalClubEmp>(
-  "ProfessionalClubEmp",
-  professionalClubEmpSchema
+
+export const ConsultingCompanyEmp = model<TConsultingCompanyEmp>(
+  "ConsultingCompanyEmp",
+  consultingCompanyEmpSchema
 );
