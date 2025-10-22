@@ -6,7 +6,7 @@ enum TPosition {
   GK_COACH = "GK Coach",
   MENTAL_COACH = "Mental Coach",
   VIDEO_ANALYST_COACH = "Video Analyst Coach",
-  SPECIFIC_FORWARD_COACH = "Specific Forward Coach",
+  SPECIFIC_OFFENSIVE_COACH = "Specific Offensive Coach",
   SPECIFIC_DEFENSIVE_COACH = "Specific Defensive Coach",
   SPECIFIC_TECHNICAL_COACH = "Specific Technical Coach",
   SCOUT = "Scout",

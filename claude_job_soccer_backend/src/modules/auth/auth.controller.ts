@@ -13,7 +13,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: StatusCodes.CREATED,
     message: "User created successfully",
-    data: null,
+    data: result,
   });
 });
 

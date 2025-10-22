@@ -219,9 +219,6 @@ const createUser = async (user: TCreateUser) => {
           emailSender.sendEmail(emailHtml);
           return { user: newUser[0], accessToken };
         }
-      },
-      {
-        readPreference: "primary",
       }
     );
   } finally {
