@@ -1,6 +1,4 @@
 // MongoDB 3-Node Replica Set Initialization
-// This runs on the PRIMARY node only when the container first starts
-
 print('='.repeat(50));
 print('MongoDB Replica Set Initialization Script');
 print('='.repeat(50));
