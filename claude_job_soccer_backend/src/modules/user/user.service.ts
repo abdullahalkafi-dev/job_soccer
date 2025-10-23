@@ -248,12 +248,60 @@ const addUserProfile = async (payload: {
         break;
 
       case CandidateRole.HIGH_SCHOOL:
+        // Videos are required for High School players
+        if (videoFiles.length === 0) {
+          throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            "High School players must upload exactly 2 Highlights videos"
+          );
+        }
+        
+        const highSchoolValidation = await validatePlayerVideos(
+          videoFiles,
+          "High School"
+        );
+        if (!highSchoolValidation.isValid) {
+          await cleanupUploadedFiles(videoFiles);
+          throw new AppError(StatusCodes.BAD_REQUEST, highSchoolValidation.error!);
+        }
+        
+        // Process player videos
+        const highSchoolVideos = await processPlayerVideos(
+          videoFiles,
+          videoTitles || []
+        );
+        data.videos = highSchoolVideos;
+        
         validatedData = HighSchoolCanDto.createHighSchoolCanDto.parse(data);
         const highSchool = await HighSchoolCan.create(validatedData);
         profileId = highSchool._id.toString();
         break;
 
       case CandidateRole.COLLEGE_UNIVERSITY:
+        // Videos are required for College/University players
+        if (videoFiles.length === 0) {
+          throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            "College/University players must upload exactly 2 Highlights videos"
+          );
+        }
+        
+        const collegeValidation = await validatePlayerVideos(
+          videoFiles,
+          "College/University"
+        );
+        if (!collegeValidation.isValid) {
+          await cleanupUploadedFiles(videoFiles);
+          throw new AppError(StatusCodes.BAD_REQUEST, collegeValidation.error!);
+        }
+        
+        // Process player videos
+        const collegeVideos = await processPlayerVideos(
+          videoFiles,
+          videoTitles || []
+        );
+        data.videos = collegeVideos;
+        
         validatedData =
           CollegeOrUniversityCanDto.createCollegeOrUniversityCanDto.parse(data);
         const collegeOrUniversity = await CollegeOrUniversity.create(

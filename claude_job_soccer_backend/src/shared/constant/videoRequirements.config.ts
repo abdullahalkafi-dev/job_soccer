@@ -236,6 +236,29 @@ export const VIDEO_REQUIREMENTS: Record<string, IPositionVideoConfig> = {
     ],
     forbiddenVideoTypes: [VideoType.PRE_RECORDED_INTERVIEW], // Players don't need interview
   },
+
+  // HIGH SCHOOL & COLLEGE/UNIVERSITY (Student Players)
+  "High School": {
+    position: "High School",
+    totalVideos: 2,
+    maxDuration: 180,
+    requiredVideoTypes: [
+      { type: VideoType.HIGHLIGHTS, required: true },
+      { type: VideoType.HIGHLIGHTS, required: true },
+    ],
+    forbiddenVideoTypes: [VideoType.PRE_RECORDED_INTERVIEW], // Players don't need interview
+  },
+
+  "College/University": {
+    position: "College/University",
+    totalVideos: 2,
+    maxDuration: 180,
+    requiredVideoTypes: [
+      { type: VideoType.HIGHLIGHTS, required: true },
+      { type: VideoType.HIGHLIGHTS, required: true },
+    ],
+    forbiddenVideoTypes: [VideoType.PRE_RECORDED_INTERVIEW], // Players don't need interview
+  },
 };
 
 // Helper function to get video requirements by position
@@ -260,7 +283,12 @@ export const isOfficeStaff = (position: string): boolean => {
 
 // Helper to check if position is player
 export const isPlayer = (position: string): boolean => {
-  return position === "Professional Player" || position === "Amateur Player";
+  return (
+    position === "Professional Player" ||
+    position === "Amateur Player" ||
+    position === "High School" ||
+    position === "College/University"
+  );
 };
 
 // Helper to validate office staff video count (1 or 2 videos allowed due to optional methodology)

@@ -39,7 +39,7 @@ const userSchema = new Schema<TBaseUser>(
       },
     },
     profileImage: {
-      type: String, 
+      type: String,
       trim: true,
       default: null,
     },
@@ -54,7 +54,7 @@ const userSchema = new Schema<TBaseUser>(
     role: {
       type: String,
       enum: [...Object.values(EmployerRole), ...Object.values(CandidateRole)],
-      required: function(): boolean {
+      required: function (): boolean {
         return (this as any).userType !== "admin";
       },
     },
@@ -89,19 +89,23 @@ userSchema.pre("save", async function (next) {
     }
   }
 
-  const isCandidateRole = Object.values(CandidateRole).includes(
-    this.role as CandidateRole
-  );
-  const isEmployerRole = Object.values(EmployerRole).includes(
-    this.role as EmployerRole
-  );
-
-  if (isCandidateRole && this.userType !== "candidate") {
-    return next(new Error("Invalid userType for candidate role"));
+  // Validate role matches userType
+  if (this.userType === "candidate") {
+    const isCandidateRole = Object.values(CandidateRole).includes(
+      this.role as CandidateRole
+    );
+    if (!isCandidateRole) {
+      return next(new Error("Invalid role for candidate userType"));
+    }
+  } else if (this.userType === "employer") {
+    const isEmployerRole = Object.values(EmployerRole).includes(
+      this.role as EmployerRole
+    );
+    if (!isEmployerRole) {
+      return next(new Error("Invalid role for employer userType"));
+    }
   }
-  if (isEmployerRole && this.userType !== "employer") {
-    return next(new Error("Invalid userType for employer role"));
-  }
+  
   next();
 });
 

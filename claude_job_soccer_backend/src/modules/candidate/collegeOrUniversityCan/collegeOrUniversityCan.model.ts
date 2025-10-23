@@ -48,12 +48,12 @@ export type TCollegeOrUniversity = {
   diploma: string;
   gpa: string;
   country: (typeof countryList)[number];
-  videos: [
-    {
-      title: string;
-      url: string;
-    }
-  ];
+  videos: {
+    url: string;
+    duration: number; // in seconds
+    title: string;
+    uploadedAt?: Date;
+  }[];
 };
 
 const collegeOrUniversitySchema = new Schema<TCollegeOrUniversity>(
@@ -103,8 +103,10 @@ const collegeOrUniversitySchema = new Schema<TCollegeOrUniversity>(
         },
         videos: [
             {
-                title: { type: String, required: true, trim: true },
                 url: { type: String, required: true, trim: true },
+                duration: { type: Number, required: true }, // in seconds
+                title: { type: String, required: true, trim: true },
+                uploadedAt: { type: Date, default: Date.now },
             },
         ],
     },

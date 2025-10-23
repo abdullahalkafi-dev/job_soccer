@@ -45,12 +45,12 @@ export type THighSchoolCan = {
   schoolName: string;
   gpa: string;
   country: (typeof countryList)[number];
-  videos: [
-    {
-      title: string;
-      url: string;
-    }
-  ];
+  videos: {
+    url: string;
+    duration: number; // in seconds
+    title: string;
+    uploadedAt?: Date;
+  }[];
 };
 
 const highSchoolCanSchema = new Schema<THighSchoolCan>(
@@ -98,8 +98,10 @@ const highSchoolCanSchema = new Schema<THighSchoolCan>(
     },
     videos: [
       {
-        title: { type: String, required: true, trim: true },
         url: { type: String, required: true, trim: true },
+        duration: { type: Number, required: true }, // in seconds
+        title: { type: String, required: true, trim: true },
+        uploadedAt: { type: Date, default: Date.now },
       },
     ],
   },
