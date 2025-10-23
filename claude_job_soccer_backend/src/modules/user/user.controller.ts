@@ -3,6 +3,11 @@ import { StatusCodes } from "http-status-codes";
 import { UserServices } from "./user.service";
 import catchAsync from "../../shared/util/catchAsync";
 import sendResponse from "../../shared/util/sendResponse";
+import { 
+  extractVideoFiles, 
+  cleanupUploadedFiles 
+} from "../../shared/util/videoHelper";
+import AppError from "../../errors/AppError";
 
 
 
@@ -97,17 +102,48 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
 
 //add user profile
 const addUserProfile = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id; // Or req.params.id depending on your route
-  const result = await UserServices.addUserProfile({
-    userId,
-    data: req.body,
-  });
-  sendResponse(res, {
-    statusCode: StatusCodes.CREATED,
-    success: true,
-    message: "User profile created successfully",
-    data: result,
-  });
+  try {
+    const userId = req.user?.id;
+    
+    // Parse profile data from request
+    const profileData = req.body.data ? JSON.parse(req.body.data) : req.body;
+    
+    // Extract video files if present
+    const videoFiles = extractVideoFiles(req);
+    
+    // Parse video metadata if present (for staff)
+    let videoMetadata = null;
+    if (req.body.videoMeta) {
+      videoMetadata = JSON.parse(req.body.videoMeta);
+    }
+    
+    // Parse video titles if present (for players)
+    let videoTitles = null;
+    if (req.body.videoTitles) {
+      videoTitles = JSON.parse(req.body.videoTitles);
+    }
+
+    // Call service with all data
+    const result = await UserServices.addUserProfile({
+      userId,
+      data: profileData,
+      videoFiles,
+      videoMetadata,
+      videoTitles,
+    });
+
+    sendResponse(res, {
+      statusCode: StatusCodes.CREATED,
+      success: true,
+      message: "User profile created successfully",
+      data: result,
+    });
+  } catch (error) {
+    // Clean up uploaded video files on error
+    const videoFiles = extractVideoFiles(req);
+    await cleanupUploadedFiles(videoFiles);
+    throw error;
+  }
 });
 
 

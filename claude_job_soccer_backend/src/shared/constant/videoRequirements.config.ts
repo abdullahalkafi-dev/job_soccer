@@ -213,6 +213,29 @@ export const VIDEO_REQUIREMENTS: Record<string, IPositionVideoConfig> = {
       { type: VideoType.METHODOLOGY, required: false }, // Optional
     ],
   },
+
+  // PLAYERS (Professional & Amateur)
+  "Professional Player": {
+    position: "Professional Player",
+    totalVideos: 2,
+    maxDuration: 180,
+    requiredVideoTypes: [
+      { type: VideoType.HIGHLIGHTS, required: true },
+      { type: VideoType.HIGHLIGHTS, required: true },
+    ],
+    forbiddenVideoTypes: [VideoType.PRE_RECORDED_INTERVIEW], // Players don't need interview
+  },
+
+  "Amateur Player": {
+    position: "Amateur Player",
+    totalVideos: 2,
+    maxDuration: 180,
+    requiredVideoTypes: [
+      { type: VideoType.HIGHLIGHTS, required: true },
+      { type: VideoType.HIGHLIGHTS, required: true },
+    ],
+    forbiddenVideoTypes: [VideoType.PRE_RECORDED_INTERVIEW], // Players don't need interview
+  },
 };
 
 // Helper function to get video requirements by position
@@ -235,7 +258,17 @@ export const isOfficeStaff = (position: string): boolean => {
   );
 };
 
+// Helper to check if position is player
+export const isPlayer = (position: string): boolean => {
+  return position === "Professional Player" || position === "Amateur Player";
+};
+
 // Helper to validate office staff video count (1 or 2 videos allowed due to optional methodology)
 export const validateOfficeStaffVideoCount = (videoCount: number): boolean => {
   return videoCount === 1 || videoCount === 2;
+};
+
+// Helper to validate player video count (exactly 2 highlights required)
+export const validatePlayerVideoCount = (videoCount: number): boolean => {
+  return videoCount === 2;
 };

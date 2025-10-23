@@ -1,9 +1,18 @@
 import { z } from "zod";
 
 const createProfessionalPlayerCanDto = z.object({
-    dateOfBirth: z.date().refine((date) => date < new Date(), {
-        message: "Date of birth must be in the past",
-    }),
+    dateOfBirth: z
+        .string()
+        .refine(
+            (date) => {
+                const parsedDate = new Date(date);
+                return !isNaN(parsedDate.getTime()) && parsedDate < new Date();
+            },
+            {
+                message: "Date of birth must be a valid date in the past",
+            }
+        )
+        .transform((date) => new Date(date)),
     placeOfBirth: z.string().trim().min(1, "Place of birth is required"),
     nationality: z.string().trim().min(1, "Nationality is required"),
     phoneNumber: z.string().trim().min(1, "Phone number is required"),
@@ -48,12 +57,15 @@ const createProfessionalPlayerCanDto = z.object({
     foot: z.enum(["Right", "Left", "Both"]),
     teamsJoined: z.string().trim().min(1, "Teams joined is required"),
     contractExpires: z.string().trim().min(1, "Contract expires is required"),
+    // Videos will be handled separately through file upload (2 Highlights videos required)
     videos: z.array(
         z.object({
-            title: z.string().trim().min(1, "Video title is required"),
-            url: z.url("Invalid URL format"),
+            url: z.string().min(1, "Video URL is required"),
+            duration: z.number().min(0, "Duration must be non-negative"), // Duration validation handled by frontend
+            title: z.string().min(1, "Video title is required"),
+            uploadedAt: z.date().optional(),
         })
-    ),
+    ).optional(),
 });
 
 const updateProfessionalPlayerCanDto = createProfessionalPlayerCanDto.partial();

@@ -6,19 +6,28 @@ import { CandidateRole, EmployerRole } from "./user.interface";
 import { QueryBuilder } from "../../shared/builder/QueryBuilder";
 import { unlinkFileSync } from "../../shared/util/unlinkFile";
 
+// Import video helpers
+import {
+  validateVideos,
+  validatePlayerVideos,
+  processVideos,
+  processPlayerVideos,
+  cleanupUploadedFiles,
+} from "../../shared/util/videoHelper";
+
 // Import Candidate DTOs
 import { AmateurPlayerCanDto } from "../candidate/amateurPlayerCan/amateurPlayerCan.dto";
 import { ProfessionalPlayerCanDto } from "../candidate/professionalPlayerCan/professionalPlayerCan.dto";
-import { CoachCanDto } from "../candidate/coachCan/coachCan.dto";
 import { OnFieldStaffCanDto } from "../candidate/onFieldStaffCan/onFieldStaffCan.dto";
+import { OfficeStaffCanDto } from "../candidate/officeStaffCan/officeStaffCan.dto";
 import { HighSchoolCanDto } from "../candidate/highSchoolCan/highSchoolCan.dto";
 import { CollegeOrUniversityCanDto } from "../candidate/collegeOrUniversityCan/collegeOrUniversityCan.dto";
 
 // Import Candidate Models
 import { AmateurPlayerCan } from "../candidate/amateurPlayerCan/amateurPlayerCan.model";
 import { ProfessionalPlayerCan } from "../candidate/professionalPlayerCan/professionalPlayerCan.model";
-import { CoachCan } from "../candidate/coachCan/coachCan.model";
 import { OnFieldStaffCan } from "../candidate/onFieldStaffCan/onFieldStaffCan.model";
+import { OfficeStaffCan } from "../candidate/officeStaffCan/officeStaffCan.model";
 import { HighSchoolCan } from "../candidate/highSchoolCan/highSchoolCan.model";
 import { CollegeOrUniversity } from "../candidate/collegeOrUniversityCan/collegeOrUniversityCan.model";
 
@@ -125,8 +134,14 @@ const getMe = async (userId: string) => {
   return user;
 };
 
-const addUserProfile = async (payload: { userId: string; data: any }) => {
-  const { userId, data } = payload;
+const addUserProfile = async (payload: { 
+  userId: string; 
+  data: any;
+  videoFiles?: Express.Multer.File[];
+  videoMetadata?: any[];
+  videoTitles?: string[];
+}) => {
+  const { userId, data, videoFiles = [], videoMetadata, videoTitles } = payload;
 
   // Check if user exists
   const user = await User.findById(userId);
@@ -150,6 +165,24 @@ const addUserProfile = async (payload: { userId: string; data: any }) => {
   if (user.userType === "candidate") {
     switch (user.role) {
       case CandidateRole.AMATEUR_PLAYER:
+        // Validate player videos if provided
+        if (videoFiles.length > 0) {
+          const validation = await validatePlayerVideos(
+            videoFiles,
+            "Amateur Player"
+          );
+          if (!validation.isValid) {
+            await cleanupUploadedFiles(videoFiles);
+            throw new AppError(StatusCodes.BAD_REQUEST, validation.error!);
+          }
+          // Process player videos
+          const processedVideos = await processPlayerVideos(
+            videoFiles,
+            videoTitles || []
+          );
+          data.videos = processedVideos;
+        }
+        
         validatedData =
           AmateurPlayerCanDto.createAmateurPlayerCanDto.parse(data);
         const amateurPlayer = await AmateurPlayerCan.create(validatedData);
@@ -157,6 +190,24 @@ const addUserProfile = async (payload: { userId: string; data: any }) => {
         break;
 
       case CandidateRole.PROFESSIONAL_PLAYER:
+        // Validate player videos if provided
+        if (videoFiles.length > 0) {
+          const validation = await validatePlayerVideos(
+            videoFiles,
+            "Professional Player"
+          );
+          if (!validation.isValid) {
+            await cleanupUploadedFiles(videoFiles);
+            throw new AppError(StatusCodes.BAD_REQUEST, validation.error!);
+          }
+          // Process player videos
+          const processedVideos = await processPlayerVideos(
+            videoFiles,
+            videoTitles || []
+          );
+          data.videos = processedVideos;
+        }
+        
         validatedData =
           ProfessionalPlayerCanDto.createProfessionalPlayerCanDto.parse(data);
         const professionalPlayer = await ProfessionalPlayerCan.create(
@@ -165,13 +216,32 @@ const addUserProfile = async (payload: { userId: string; data: any }) => {
         profileId = professionalPlayer._id.toString();
         break;
 
-      case CandidateRole.COACH:
-        validatedData = CoachCanDto.createCoachCanDto.parse(data);
-        const coach = await CoachCan.create(validatedData);
-        profileId = coach._id.toString();
-        break;
-
       case CandidateRole.ON_FIELD_STAFF:
+        // Validate staff videos if provided
+        if (videoFiles.length > 0) {
+          if (!videoMetadata) {
+            await cleanupUploadedFiles(videoFiles);
+            throw new AppError(
+              StatusCodes.BAD_REQUEST,
+              "Video metadata (videoMeta) is required for staff profiles"
+            );
+          }
+          
+          const validation = await validateVideos(
+            data.position,
+            videoMetadata,
+            videoFiles
+          );
+          if (!validation.isValid) {
+            await cleanupUploadedFiles(videoFiles);
+            throw new AppError(StatusCodes.BAD_REQUEST, validation.error!);
+          }
+          
+          // Process staff videos
+          const processedVideos = await processVideos(videoFiles, videoMetadata);
+          data.videos = processedVideos;
+        }
+        
         validatedData = OnFieldStaffCanDto.createOnFieldStaffCanDto.parse(data);
         const onFieldStaff = await OnFieldStaffCan.create(validatedData);
         profileId = onFieldStaff._id.toString();
@@ -190,6 +260,37 @@ const addUserProfile = async (payload: { userId: string; data: any }) => {
           validatedData
         );
         profileId = collegeOrUniversity._id.toString();
+        break;
+
+      case CandidateRole.OFFICE_STAFF:
+        // Validate office staff videos if provided
+        if (videoFiles.length > 0) {
+          if (!videoMetadata) {
+            await cleanupUploadedFiles(videoFiles);
+            throw new AppError(
+              StatusCodes.BAD_REQUEST,
+              "Video metadata (videoMeta) is required for staff profiles"
+            );
+          }
+          
+          const validation = await validateVideos(
+            data.position,
+            videoMetadata,
+            videoFiles
+          );
+          if (!validation.isValid) {
+            await cleanupUploadedFiles(videoFiles);
+            throw new AppError(StatusCodes.BAD_REQUEST, validation.error!);
+          }
+          
+          // Process staff videos
+          const processedVideos = await processVideos(videoFiles, videoMetadata);
+          data.videos = processedVideos;
+        }
+        
+        validatedData = OfficeStaffCanDto.createOfficeStaffCanDto.parse(data);
+        const officeStaff = await OfficeStaffCan.create(validatedData);
+        profileId = officeStaff._id.toString();
         break;
 
       default:

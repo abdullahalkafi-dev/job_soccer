@@ -12,6 +12,14 @@ router.get("/", UserController.getAllUsers);
 router.get("/me", auth(),UserController.getMe);
 router.get("/:id", UserController.getUserById);
 
+// Profile creation with videos
+router.post(
+  "/profile",
+  auth(),
+  fileUploadHandler,
+  UserController.addUserProfile
+);
+
 router.patch(
   "/:id", 
   fileUploadHandler,

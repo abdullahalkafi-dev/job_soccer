@@ -1,8 +1,5 @@
 import { promises as fs } from "fs";
-import { StatusCodes } from "http-status-codes";
-import AppError from "../../errors/AppError";
 import {
-  VideoType,
   IVideoMetadata,
   IVideoValidationResult,
   IVideo,
@@ -14,30 +11,26 @@ import {
 } from "../constant/videoRequirements.config";
 
 /**
- * Get video duration using get-video-duration package
- * No external dependencies required - pure Node.js solution
+ * Convert absolute file path to relative path for storage
+ * Example: /app/uploads/videos/file.mp4 -> videos/file.mp4
+ */
+const getRelativePath = (absolutePath: string): string => {
+  const videosIndex = absolutePath.indexOf('videos/');
+  if (videosIndex !== -1) {
+    return absolutePath.substring(videosIndex);
+  }
+  return absolutePath; // Fallback to original if 'videos/' not found
+};
+
+/**
+ * Get video duration - DISABLED (handled by frontend)
+ * Returns 0 as duration will be validated on frontend
  */
 export const getVideoDuration = async (
   filePath: string
 ): Promise<number> => {
-  try {
-    // Dynamically import get-video-duration
-    const { getVideoDurationInSeconds } = await import("get-video-duration");
-    
-    const duration = await getVideoDurationInSeconds(filePath);
-
-    if (isNaN(duration) || duration <= 0) {
-      throw new Error("Invalid duration value");
-    }
-
-    return Math.round(duration);
-  } catch (error: any) {
-    console.error("Error getting video duration:", error);
-    throw new AppError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      `Failed to get video duration: ${error.message}. Make sure 'get-video-duration' package is installed.`
-    );
-  }
+  // Duration validation is handled by frontend
+  return 0;
 };
 
 /**
@@ -134,33 +127,17 @@ export const validateVideos = async (
     }
   }
 
-  // Check video durations
+  // Duration validation removed - handled by frontend
+  // All videos will have duration set to 0
   for (let i = 0; i < videoFiles.length; i++) {
-    try {
-      const duration = await getVideoDuration(videoFiles[i].path);
-
-      if (duration > requirements.maxDuration) {
-        return {
-          isValid: false,
-          error: `Video "${videoMetadata[i].type}" exceeds maximum duration of ${requirements.maxDuration / 60} minutes (actual: ${Math.round(duration)}s)`,
-        };
-      }
-
-      // Store duration in file object for later use
-      (videoFiles[i] as any).duration = duration;
-    } catch (error: any) {
-      return {
-        isValid: false,
-        error: `Failed to validate video "${videoMetadata[i].type}": ${error.message}`,
-      };
-    }
+    (videoFiles[i] as any).duration = 0;
   }
 
   return { isValid: true };
 };
 
 /**
- * Process videos after validation
+ * Process videos after validation (for staff with video types)
  * Maps video files with metadata and prepares for storage
  */
 export const processVideos = async (
@@ -173,10 +150,31 @@ export const processVideos = async (
 
     return {
       videoType: metadata.type,
-      url: file.path, // This will be replaced with S3/cloud URL in actual implementation
+      url: getRelativePath(file.path), 
       duration: duration,
       title: metadata.title,
       description: metadata.description,
+      uploadedAt: new Date(),
+    };
+  });
+};
+
+/**
+ * Process player videos (all are Highlights, no videoType needed)
+ * Maps video files with titles only
+ */
+export const processPlayerVideos = async (
+  videoFiles: Express.Multer.File[],
+  videoTitles: string[]
+): Promise<any[]> => {
+  return videoFiles.map((file, index) => {
+    const duration = (file as any).duration || 0;
+    const title = videoTitles[index] || `Highlights ${index + 1}`;
+
+    return {
+      url: getRelativePath(file.path),
+      duration: duration,
+      title: title,
       uploadedAt: new Date(),
     };
   });
@@ -203,6 +201,30 @@ export const cleanupUploadedFiles = async (
       }
     })
   );
+};
+
+/**
+ * Validate player videos (simpler validation - just 2 highlights)
+ */
+export const validatePlayerVideos = async (
+  videoFiles: Express.Multer.File[],
+  playerType: "Professional Player" | "Amateur Player"
+): Promise<IVideoValidationResult> => {
+  // Players need exactly 2 videos
+  if (videoFiles.length !== 2) {
+    return {
+      isValid: false,
+      error: `${playerType} requires exactly 2 Highlights videos, received ${videoFiles.length}`,
+    };
+  }
+
+  // Duration validation removed - handled by frontend
+  // All videos will have duration set to 0
+  for (let i = 0; i < videoFiles.length; i++) {
+    (videoFiles[i] as any).duration = 0;
+  }
+
+  return { isValid: true };
 };
 
 /**

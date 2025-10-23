@@ -1,7 +1,11 @@
 # Video Upload and Validation Implementation Guide
 
 ## Overview
-This implementation handles video uploads for coaches with position-specific validation requirements.
+This implementation handles video uploads for On Field Staff and Office Staff candidates with position-specific validation requirements.
+
+**Important:** Coaches (Head Coach, Assistant Coach, GK Coach, etc.) are NOT separate roles. They are positions within the "On field staff" role. When creating a profile, users select:
+- **Role:** "On field staff"
+- **Position:** "Head Coach" (or any other coaching position)
 
 ## Key Features
 - ✅ Position-based video requirements validation
@@ -19,10 +23,11 @@ This implementation handles video uploads for coaches with position-specific val
 const formData = new FormData();
 
 // 1. Profile data as JSON string
+// Note: User role is "On field staff", position is "Head Coach"
 formData.append('data', JSON.stringify({
   firstName: "John",
   lastName: "Doe",
-  position: "Head Coach",
+  position: "Head Coach", // Position within On Field Staff role
   dateOfBirth: "1980-01-01",
   placeOfBirth: "London",
   nationality: "British",
@@ -69,7 +74,7 @@ formData.append('videos', videoFile3); // Tactical
 formData.append('videos', videoFile4); // Game's Principals
 
 // 4. Send request
-const response = await fetch('/api/coaches', {
+const response = await fetch('/api/on-field-staff', { // Note: endpoint for On Field Staff
   method: 'POST',
   body: formData
 });
@@ -77,7 +82,9 @@ const response = await fetch('/api/coaches', {
 
 ## Video Requirements by Position
 
-### On Field Staff
+### On Field Staff Role
+
+**All coaching positions below are part of the "On field staff" role**
 
 #### Head Coach & Assistant Coach (4 videos)
 1. Pre-recorded Interview (mandatory)
@@ -110,7 +117,7 @@ const response = await fetch('/api/coaches', {
 1. Pre-recorded Interview (mandatory)
 2. Coaching Recruitment Methodology video
 
-### Office Staff (2 videos)
+### Office Staff Role (2 videos)
 1. Pre-recorded Interview (mandatory)
 2. Methodology video (optional)
 
@@ -133,22 +140,22 @@ Positions:
 ```typescript
 import express from "express";
 import fileUploadHandler from "../../../shared/middlewares/fileUploadHandler";
-import { createCoachWithVideos, updateCoachVideos } from "./CoachCan.videoController";
+import { createOnFieldStaffWithVideos, updateOnFieldStaffVideos } from "./onFieldStaffCan.videoController";
 
 const router = express.Router();
 
-// Create coach with videos
+// Create on-field staff with videos
 router.post(
   "/create",
   fileUploadHandler, // Handles file upload
-  createCoachWithVideos // Validates and processes
+  createOnFieldStaffWithVideos // Validates and processes
 );
 
-// Update coach videos
+// Update on-field staff videos
 router.put(
-  "/:coachId/videos",
+  "/:staffId/videos",
   fileUploadHandler,
-  updateCoachVideos
+  updateOnFieldStaffVideos
 );
 
 export default router;
@@ -156,7 +163,7 @@ export default router;
 
 ### Controller Usage
 
-The controller in `CoachCan.videoController.ts` demonstrates:
+The controller in `onFieldStaffCan.videoController.ts` demonstrates:
 
 1. **Parsing request data**
    - Profile data from `req.body.data`
@@ -323,8 +330,9 @@ pnpm add get-video-duration
 ### Example Test Cases
 
 ```typescript
-// 1. Valid Head Coach submission
+// 1. Valid Head Coach submission (On Field Staff role, Head Coach position)
 {
+  role: "On field staff",
   position: "Head Coach",
   videos: 4,
   types: ["Pre-recorded Interview", "Technical", "Tactical", "Game's Principals"]
@@ -332,6 +340,7 @@ pnpm add get-video-duration
 
 // 2. Missing required video
 {
+  role: "On field staff",
   position: "Head Coach",
   videos: 3,
   types: ["Technical", "Tactical", "Game's Principals"]
@@ -340,6 +349,7 @@ pnpm add get-video-duration
 
 // 3. Office staff with optional methodology
 {
+  role: "Office Staff",
   position: "Administrative Director",
   videos: 1,
   types: ["Pre-recorded Interview"]
@@ -348,6 +358,7 @@ pnpm add get-video-duration
 
 // 4. Video too long
 {
+  role: "On field staff",
   position: "GK Coach",
   videos: 2,
   durations: [120, 200] // 2 minutes, 3.33 minutes
@@ -361,11 +372,17 @@ pnpm add get-video-duration
 1. `src/shared/constant/video.constant.ts` - Enums and interfaces
 2. `src/shared/constant/videoRequirements.config.ts` - Position requirements
 3. `src/shared/util/videoHelper.ts` - Validation and processing utilities
-4. `src/modules/candidate/coachCan/CoachCan.videoController.ts` - Example controller
+4. `src/modules/candidate/onFieldStaffCan/onFieldStaffCan.videoController.ts` - Example controller for On Field Staff
 
 ### Modified Files
 1. `src/shared/middlewares/fileUploadHandler.ts` - Added video support
-2. `src/modules/candidate/coachCan/coachCan.model.ts` - Updated schema
+2. `src/modules/candidate/onFieldStaffCan/onFieldStaffCan.model.ts` - Updated schema with video support
+3. `src/modules/candidate/officeStaffCan/officeStaffCan.model.ts` - Updated schema with video support
+
+### Important Notes
+- The `coachCan` folder/module does NOT exist and should NOT be created
+- Coaches are positions within the `onFieldStaffCan` module
+- Use `onFieldStaffCan` for all coaching-related profiles
 
 ## Support
 

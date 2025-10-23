@@ -72,12 +72,10 @@ const userSchema = new Schema<TBaseUser>(
 );
 userSchema.index({ email: 1 });
 userSchema.index({ authId: 1 });
-userSchema.index({ email: 1 });
 userSchema.index({ profileId: 1 });
 userSchema.index({ userType: 1, role: 1 });
 userSchema.index({ status: 1 });
 userSchema.index({ isVerified: 1 });
-// this for better index performance
 userSchema.index({ createdAt: -1 });
 // this for text search in names
 userSchema.index({ firstName: "text", lastName: "text" });

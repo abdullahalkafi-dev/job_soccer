@@ -2,34 +2,28 @@ import { model, Schema } from "mongoose";
 import { countryList } from "../../../shared/constant/country.constant";
 
 enum TPosition {
-  ASSISTANT_COACH = "Assistant Coach",
-  GK_COACH = "GK Coach",
-  MENTAL_COACH = "Mental Coach",
-  VIDEO_ANALYST_COACH = "Video Analyst Coach",
-  SPECIFIC_FORWARD_COACH = "Specific Forward Coach",
-  SPECIFIC_DEFENSIVE_COACH = "Specific Defensive Coach",
-  SPECIFIC_TECHNICAL_COACH = "Specific Technical Coach",
-  SCOUT = "Scout",
-  TECHNICAL_DIRECTOR = "Technical Director",
-  ACADEMY_DIRECTOR = "Academy Director",
-  DIRECTOR_OF_COACHING = "Director of Coaching",
+  ADMINISTRATIVE_DIRECTOR = "Administrative Director",
+  COMMUNITY_MANAGER = "Community Manager",
+  DATA_ANALYST = "Data Analyst",
+  DIGITAL_MARKETING = "Digital Marketing",
+  MEDICAL_STAFF = "Medical Staff",
+  PERFORMANCE_STAFF = "Performance Staff",
+  EQUIPMENT_STAFF = "Equipment Staff",
+  SALES = "Sales",
 }
 
-export type TOnFieldStaffCan = {
+export type TOfficeStaffCan = {
   dateOfBirth: Date;
   placeOfBirth: string;
+  country: (typeof countryList)[number];
   nationality: string;
   phoneNumber: string;
-  currentClub: string;
-  availability: string;
-  league: string;
-  gender: "male" | "female";
-  country: (typeof countryList)[number];
-  licensesNumber: string;
-  category: string;
-  socialMedia: string;
-  agent: string;
   position: TPosition;
+  languages: string;
+  availability: string;
+  licensesNumber: string;
+  agent: string;
+  socialMedia: string;
   videos: {
     videoType: string; // From VideoType enum
     url: string;
@@ -39,23 +33,19 @@ export type TOnFieldStaffCan = {
     uploadedAt?: Date;
   }[];
 };
-const onFieldStaffCanSchema = new Schema<TOnFieldStaffCan>(
+const officeStaffSchema = new Schema<TOfficeStaffCan>(
   {
     dateOfBirth: { type: Date, required: true },
     placeOfBirth: { type: String, required: true, trim: true },
     nationality: { type: String, required: true, trim: true },
     phoneNumber: { type: String, required: true, trim: true },
-    currentClub: { type: String, required: true, trim: true },
     availability: { type: String, required: true, trim: true },
-    league: { type: String, required: true, trim: true },
     country: {
       type: String,
       enum: countryList,
       required: true,
     },
-    gender: { type: String, enum: ["male", "female"], required: true },
     licensesNumber: { type: String, required: true, trim: true },
-    category: { type: String, required: true, trim: true },
     socialMedia: { type: String, required: true, trim: true },
     agent: { type: String, required: true, trim: true },
     position: {
@@ -80,7 +70,7 @@ const onFieldStaffCanSchema = new Schema<TOnFieldStaffCan>(
   }
 );
 
-export const OnFieldStaffCan = model<TOnFieldStaffCan>(
-  "OnFieldStaffCan",
-  onFieldStaffCanSchema
+export const OfficeStaffCan = model<TOfficeStaffCan>(
+  "OfficeStaffCan",
+  officeStaffSchema
 );

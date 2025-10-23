@@ -11,7 +11,7 @@ export enum CandidateRole {
   HIGH_SCHOOL = "High School",
   COLLEGE_UNIVERSITY = "College/University",
   ON_FIELD_STAFF = "On field staff",
-  COACH = "Coach",
+  OFFICE_STAFF = "Office Staff",
 }
 export enum EmployerRole {
   PROFESSIONAL_CLUB = "Professional Club",

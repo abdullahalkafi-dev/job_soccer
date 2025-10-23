@@ -55,12 +55,12 @@ export type TProfessionalPlayerCan = {
   foot: TFoot;
   teamsJoined: string;
   contractExpires: string;
-  videos: [
-    {
-      title: string;
-      url: string;
-    }
-  ];
+  videos: {
+    url: string;
+    duration: number; // in seconds
+    title: string;
+    uploadedAt?: Date;
+  }[];
 };
 
 const professionalPlayerCanSchema = new Schema<TProfessionalPlayerCan>(
@@ -112,8 +112,10 @@ const professionalPlayerCanSchema = new Schema<TProfessionalPlayerCan>(
         contractExpires: { type: String, required: true, trim: true },
         videos: [
             {
-                title: { type: String, required: true, trim: true },
                 url: { type: String, required: true, trim: true },
+                duration: { type: Number, required: true }, // in seconds
+                title: { type: String, required: true, trim: true },
+                uploadedAt: { type: Date, default: Date.now },
             },
         ],
     },

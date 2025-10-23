@@ -1,9 +1,18 @@
 import { z } from "zod";
 
 const createHighSchoolCanDto = z.object({
-    dateOfBirth: z.date().refine((date) => date < new Date(), {
-        message: "Date of birth must be in the past",
-    }),
+    dateOfBirth: z
+        .string()
+        .refine(
+            (date) => {
+                const parsedDate = new Date(date);
+                return !isNaN(parsedDate.getTime()) && parsedDate < new Date();
+            },
+            {
+                message: "Date of birth must be a valid date in the past",
+            }
+        )
+        .transform((date) => new Date(date)),
     placeOfBirth: z.string().trim().min(1, "Place of birth is required"),
     nationality: z.string().trim().min(1, "Nationality is required"),
     phoneNumber: z.string().trim().min(1, "Phone number is required"),

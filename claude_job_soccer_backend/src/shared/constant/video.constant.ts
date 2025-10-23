@@ -1,9 +1,9 @@
 // Video Type Enum
 export enum VideoType {
-  // Mandatory for staff
+  // Mandatory for staff (NOT for players)
   PRE_RECORDED_INTERVIEW = "Pre-recorded Interview",
 
-  // Technical/Tactical
+  // Technical/Tactical (for coaches)
   TECHNICAL = "Technical",
   TACTICAL = "Tactical",
   GAME_PRINCIPALS = "Game's Principals",
@@ -17,11 +17,10 @@ export enum VideoType {
   PLAYER_RECRUITMENT_METHODOLOGY = "Player Recruitment Methodology",
   COACHING_RECRUITMENT_METHODOLOGY = "Coaching Recruitment Methodology",
 
-  // Players only
+  // Players only (Professional & Amateur)
   HIGHLIGHTS = "Highlights",
 }
-
-// Position Enum (matching your existing enum)
+// On Field Staff Position Enum
 export enum TPosition {
   HEAD_COACH = "Head Coach",
   ASSISTANT_COACH = "Assistant Coach",
@@ -35,6 +34,12 @@ export enum TPosition {
   TECHNICAL_DIRECTOR = "Technical Director",
   ACADEMY_DIRECTOR = "Academy Director",
   DIRECTOR_OF_COACHING = "Director of Coaching",
+}
+
+// Player Position Enum (for video context)
+export enum PlayerRole {
+  PROFESSIONAL_PLAYER = "Professional Player",
+  AMATEUR_PLAYER = "Amateur Player",
 }
 
 // Office Staff Position Enum
@@ -59,10 +64,18 @@ export interface IVideoMetadata {
 // Video Document Interface (for DB storage)
 export interface IVideo {
   videoType: VideoType;
-  url: string;
+  url: string; // Local file path (e.g., uploads/videos/filename.mp4)
   duration: number; // in seconds
   title?: string;
   description?: string;
+  uploadedAt?: Date;
+}
+
+// Simplified video for players (no videoType field needed, all are Highlights)
+export interface IPlayerVideo {
+  url: string; // Local file path
+  duration: number; // in seconds
+  title: string;
   uploadedAt?: Date;
 }
 
