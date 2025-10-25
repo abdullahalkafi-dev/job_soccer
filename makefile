@@ -9,7 +9,7 @@ dev-d:
 	docker-compose -f docker-compose.dev.yml up --build -d
 
 stop-dev:
-	docker-compose -f docker-compose.dev.yml down 
+	docker-compose -f docker-compose.dev.yml down -v
 
 logs-dev:
 	docker-compose -f docker-compose.dev.yml logs -f

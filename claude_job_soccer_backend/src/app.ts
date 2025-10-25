@@ -10,7 +10,6 @@ import { requestIdMiddleware } from "./shared/middlewares/requestIdAdder";
 import { helmetConfig } from "./shared/middlewares/security";
 import winstonLogger from "./shared/logger/winstonExpressLogger";
 import { logger } from "./shared/logger/logger";
-import AppError from "./errors/AppError";
 
 const app: express.Application = express();
 

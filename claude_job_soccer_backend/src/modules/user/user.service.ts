@@ -6,6 +6,9 @@ import { CandidateRole, EmployerRole } from "./user.interface";
 import { QueryBuilder } from "../../shared/builder/QueryBuilder";
 import { unlinkFileSync } from "../../shared/util/unlinkFile";
 
+// Import OpenAI service
+import { generateProfileScore } from "../../shared/openai";
+
 // Import video helpers
 import {
   validateVideos,
@@ -134,8 +137,8 @@ const getMe = async (userId: string) => {
   return user;
 };
 
-const addUserProfile = async (payload: { 
-  userId: string; 
+const addUserProfile = async (payload: {
+  userId: string;
   data: any;
   videoFiles?: Express.Multer.File[];
   videoMetadata?: any[];
@@ -182,7 +185,7 @@ const addUserProfile = async (payload: {
           );
           data.videos = processedVideos;
         }
-        
+
         validatedData =
           AmateurPlayerCanDto.createAmateurPlayerCanDto.parse(data);
         const amateurPlayer = await AmateurPlayerCan.create(validatedData);
@@ -207,7 +210,7 @@ const addUserProfile = async (payload: {
           );
           data.videos = processedVideos;
         }
-        
+
         validatedData =
           ProfessionalPlayerCanDto.createProfessionalPlayerCanDto.parse(data);
         const professionalPlayer = await ProfessionalPlayerCan.create(
@@ -226,7 +229,7 @@ const addUserProfile = async (payload: {
               "Video metadata (videoMeta) is required for staff profiles"
             );
           }
-          
+
           const validation = await validateVideos(
             data.position,
             videoMetadata,
@@ -236,12 +239,15 @@ const addUserProfile = async (payload: {
             await cleanupUploadedFiles(videoFiles);
             throw new AppError(StatusCodes.BAD_REQUEST, validation.error!);
           }
-          
+
           // Process staff videos
-          const processedVideos = await processVideos(videoFiles, videoMetadata);
+          const processedVideos = await processVideos(
+            videoFiles,
+            videoMetadata
+          );
           data.videos = processedVideos;
         }
-        
+
         validatedData = OnFieldStaffCanDto.createOnFieldStaffCanDto.parse(data);
         const onFieldStaff = await OnFieldStaffCan.create(validatedData);
         profileId = onFieldStaff._id.toString();
@@ -255,23 +261,26 @@ const addUserProfile = async (payload: {
             "High School players must upload exactly 2 Highlights videos"
           );
         }
-        
+
         const highSchoolValidation = await validatePlayerVideos(
           videoFiles,
           "High School"
         );
         if (!highSchoolValidation.isValid) {
           await cleanupUploadedFiles(videoFiles);
-          throw new AppError(StatusCodes.BAD_REQUEST, highSchoolValidation.error!);
+          throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            highSchoolValidation.error!
+          );
         }
-        
+
         // Process player videos
         const highSchoolVideos = await processPlayerVideos(
           videoFiles,
           videoTitles || []
         );
         data.videos = highSchoolVideos;
-        
+
         validatedData = HighSchoolCanDto.createHighSchoolCanDto.parse(data);
         const highSchool = await HighSchoolCan.create(validatedData);
         profileId = highSchool._id.toString();
@@ -285,7 +294,7 @@ const addUserProfile = async (payload: {
             "College/University players must upload exactly 2 Highlights videos"
           );
         }
-        
+
         const collegeValidation = await validatePlayerVideos(
           videoFiles,
           "College/University"
@@ -294,14 +303,14 @@ const addUserProfile = async (payload: {
           await cleanupUploadedFiles(videoFiles);
           throw new AppError(StatusCodes.BAD_REQUEST, collegeValidation.error!);
         }
-        
+
         // Process player videos
         const collegeVideos = await processPlayerVideos(
           videoFiles,
           videoTitles || []
         );
         data.videos = collegeVideos;
-        
+
         validatedData =
           CollegeOrUniversityCanDto.createCollegeOrUniversityCanDto.parse(data);
         const collegeOrUniversity = await CollegeOrUniversity.create(
@@ -320,7 +329,7 @@ const addUserProfile = async (payload: {
               "Video metadata (videoMeta) is required for staff profiles"
             );
           }
-          
+
           const validation = await validateVideos(
             data.position,
             videoMetadata,
@@ -330,12 +339,15 @@ const addUserProfile = async (payload: {
             await cleanupUploadedFiles(videoFiles);
             throw new AppError(StatusCodes.BAD_REQUEST, validation.error!);
           }
-          
+
           // Process staff videos
-          const processedVideos = await processVideos(videoFiles, videoMetadata);
+          const processedVideos = await processVideos(
+            videoFiles,
+            videoMetadata
+          );
           data.videos = processedVideos;
         }
-        
+
         validatedData = OfficeStaffCanDto.createOfficeStaffCanDto.parse(data);
         const officeStaff = await OfficeStaffCan.create(validatedData);
         profileId = officeStaff._id.toString();
@@ -427,6 +439,25 @@ const addUserProfile = async (payload: {
       StatusCodes.INTERNAL_SERVER_ERROR,
       "Failed to update user with profile ID"
     );
+  }
+
+  // Generate AI profile score for candidates (non-blocking)
+  if (user.userType === "candidate") {
+    try {
+      const profileScore = await generateProfileScore(
+        validatedData,
+        user.role as CandidateRole
+      );
+      
+      // Update user with AI score
+      await User.findByIdAndUpdate(userId, { profileAIScore: profileScore });
+      
+      // Update the returned user object
+      updatedUser.profileAIScore = profileScore;
+    } catch (error) {
+      // Log error but don't fail the profile creation
+      console.error("Error generating AI profile score:", error);
+    }
   }
 
   return {

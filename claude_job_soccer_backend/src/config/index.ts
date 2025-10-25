@@ -44,5 +44,8 @@ export default {
     client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
     universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN,
   },
+  openai: {
+    api_key: process.env.OPENAI_API_KEY,
+  },
 };
 

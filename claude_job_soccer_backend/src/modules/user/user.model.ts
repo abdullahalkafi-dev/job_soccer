@@ -64,6 +64,22 @@ const userSchema = new Schema<TBaseUser>(
       required: true,
     },
     isDeleted: { type: Boolean, default: false },
+    profileAIScore: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: null,
+      validate: {
+        validator: function (value: number | null) {
+          // Only candidates can have AI scores
+          if (value !== null && (this as any).userType !== "candidate") {
+            return false;
+          }
+          return true;
+        },
+        message: "Only candidate profiles can have AI scores",
+      },
+    },
   },
   {
     timestamps: true,
@@ -77,6 +93,7 @@ userSchema.index({ userType: 1, role: 1 });
 userSchema.index({ status: 1 });
 userSchema.index({ isVerified: 1 });
 userSchema.index({ createdAt: -1 });
+userSchema.index({ profileAIScore: -1 }); // Index for filtering by AI score
 // this for text search in names
 userSchema.index({ firstName: "text", lastName: "text" });
 

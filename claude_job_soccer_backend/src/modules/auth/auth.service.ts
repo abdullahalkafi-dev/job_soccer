@@ -253,6 +253,15 @@ const loginUser = async (payload: TLoginData) => {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
+      // Check if user was created with the same login provider
+      const auth = await Auth.findOne({ email });
+      if (auth && auth.loginProvider !== LoginProvider.LINKEDIN) {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          `This account was created using ${auth.loginProvider}. Please login with ${auth.loginProvider}.`
+        );
+      }
+
       // User exists, return token
       const accessToken = jwtHelper.createToken(
         {
@@ -296,6 +305,14 @@ const loginUser = async (payload: TLoginData) => {
 
     if (!isExistingUser || !auth) {
       throw new AppError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+    }
+
+    // Check if user was created with the same login provider
+    if (auth.loginProvider !== LoginProvider.EMAIL) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `This account was created using ${auth.loginProvider}. Please login with ${auth.loginProvider}.`
+      );
     }
 
     const hashedPassword = auth.password;

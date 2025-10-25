@@ -1,7 +1,6 @@
 import { model, Schema } from "mongoose";
 import { countryList } from "../../../shared/constant/country.constant";
 
-
 enum TPosition {
   GK = "GK",
   CENTRAL_BACK = "Central back",
@@ -35,7 +34,7 @@ export type TCollegeOrUniversity = {
   height: { size: number; unit: string };
   currentClub: string;
   category: string;
-  position: TPosition; // need update 
+  position: TPosition; // need update
   agent: string;
   socialMedia: string;
   satOrAct: string;
@@ -57,66 +56,66 @@ export type TCollegeOrUniversity = {
 };
 
 const collegeOrUniversitySchema = new Schema<TCollegeOrUniversity>(
-    {
-        dateOfBirth: { type: Date, required: true },
-        placeOfBirth: { type: String, required: true, trim: true },
-        nationality: { type: String, required: true, trim: true },
-        phoneNumber: { type: String, required: true, trim: true },
-        gender: { type: String, required: true, trim: true },
-        height: {
-            size: { type: Number, required: true },
-            unit: { type: String, required: true, enum: ["cm", "m", "in", "ft"] },
-        },
-        currentClub: { type: String, required: true, trim: true },
-        category: { type: String, required: true, trim: true },
-        position: {
-            type: String,
-            enum: Object.values(TPosition),
-            required: true,
-        },
-        agent: { type: String, required: true, trim: true },
-        socialMedia: { type: String, required: true, trim: true },
-        satOrAct: { type: String, required: true, trim: true },
-        availability: {
-            type: String,
-            enum: Object.values(TAvailability),
-            required: true,
-        },
-        weight: {
-            size: { type: Number, required: true },
-            unit: { type: String, required: true, enum: ["kg", "lb"] },
-        },
-        collegeOrUniversity: { type: String, required: true, trim: true },
-        foot: {
-            type: String,
-            enum: Object.values(TFoot),
-            required: true,
-        },
-        league: { type: String, required: true, trim: true },
-        schoolName: { type: String, required: true, trim: true },
-        diploma: { type: String, required: true, trim: true },
-        gpa: { type: String, required: true, trim: true },
-        country: {
-            type: String,
-            enum: countryList,
-            required: true,
-        },
-        videos: [
-            {
-                url: { type: String, required: true, trim: true },
-                duration: { type: Number, required: true }, // in seconds
-                title: { type: String, required: true, trim: true },
-                uploadedAt: { type: Date, default: Date.now },
-            },
-        ],
+  {
+    dateOfBirth: { type: Date, required: true },
+    placeOfBirth: { type: String, required: true, trim: true },
+    nationality: { type: String, required: true, trim: true },
+    phoneNumber: { type: String, required: true, trim: true },
+    gender: { type: String, required: true, trim: true },
+    height: {
+      size: { type: Number, required: true },
+      unit: { type: String, required: true, enum: ["cm", "m", "in", "ft"] },
     },
-    {
-        timestamps: true,
-        versionKey: false,
-    }
+    currentClub: { type: String, required: true, trim: true },
+    category: { type: String, required: true, trim: true },
+    position: {
+      type: String,
+      enum: Object.values(TPosition),
+      required: true,
+    },
+    agent: { type: String, required: true, trim: true },
+    socialMedia: { type: String, required: true, trim: true },
+    satOrAct: { type: String, required: true, trim: true },
+    availability: {
+      type: String,
+      enum: Object.values(TAvailability),
+      required: true,
+    },
+    weight: {
+      size: { type: Number, required: true },
+      unit: { type: String, required: true, enum: ["kg", "lb"] },
+    },
+    collegeOrUniversity: { type: String, required: true, trim: true },
+    foot: {
+      type: String,
+      enum: Object.values(TFoot),
+      required: true,
+    },
+    league: { type: String, required: true, trim: true },
+    schoolName: { type: String, required: true, trim: true },
+    diploma: { type: String, required: true, trim: true },
+    gpa: { type: String, required: true, trim: true },
+    country: {
+      type: String,
+      enum: countryList,
+      required: true,
+    },
+    videos: [
+      {
+        url: { type: String, required: true, trim: true },
+        duration: { type: Number, required: true }, // in seconds
+        title: { type: String, required: true, trim: true },
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  }
 );
 
 export const CollegeOrUniversity = model<TCollegeOrUniversity>(
-    "CollegeOrUniversity",
-    collegeOrUniversitySchema
+  "CollegeOrUniversityCan",
+  collegeOrUniversitySchema
 );

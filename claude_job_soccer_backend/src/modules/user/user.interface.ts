@@ -33,6 +33,7 @@ export type TBaseUser = {
   isVerified: boolean;
   isDeleted?: boolean;
   authId: Types.ObjectId;
+  profileAIScore?: number; // AI-generated profile score (0-100) for candidates
 };
 
 export type UserModal = {

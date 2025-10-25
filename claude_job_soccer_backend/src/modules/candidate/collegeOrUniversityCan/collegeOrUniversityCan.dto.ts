@@ -74,3 +74,5 @@ export const CollegeOrUniversityCanDto = {
     createCollegeOrUniversityCanDto,
     updateCollegeOrUniversityCanDto,
 };
+
+
