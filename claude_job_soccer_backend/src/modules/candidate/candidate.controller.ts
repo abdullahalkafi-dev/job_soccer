@@ -10,7 +10,7 @@ import sendResponse from "../../shared/util/sendResponse";
  */
 const searchCandidates = catchAsync(async (req: Request, res: Response) => {
   const result = await CandidateServices.searchCandidates(req.query);
-  
+     
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,

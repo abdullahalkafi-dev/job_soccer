@@ -24,10 +24,10 @@ const auth =
             token,
             config.jwt.jwt_secret as Secret
           );
-          console.log(verifyUser);
-          console.log(roles);
+     
           //set user to header
-          req.user = verifyUser;
+          req.user = verifyUser as typeof req.user;
+          
           //guard user
           if (roles.length && !roles.includes(verifyUser.userType)) {
             throw new AppError(
