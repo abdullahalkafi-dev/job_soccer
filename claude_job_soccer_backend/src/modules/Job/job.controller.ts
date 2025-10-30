@@ -42,7 +42,12 @@ const getAllJobs = catchAsync(async (req: Request, res: Response) => {
     success: true,
     message: "Jobs retrieved successfully",
     data: result.data,
-    meta: result.meta,
+    meta: {
+      page: result.meta.page,
+      limit: result.meta.limit,
+      totalPage: result.meta.totalPages,
+      total: result.meta.total,
+    },
   });
 });
 
@@ -77,26 +82,6 @@ const getActiveJobs = catchAsync(async (req: Request, res: Response) => {
       totalPage: result.meta.totalPages,
       total: result.meta.total,
     },
-  });
-});
-
-/**
- * Search jobs by keyword
- * GET /api/v1/jobs/search
- */
-const searchJobs = catchAsync(async (req: Request, res: Response) => {
-  const { searchTerm, ...additionalFilters } = req.query;
-
-  const result = await JobService.searchJobs(
-    searchTerm as string,
-    additionalFilters
-  );
-
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Jobs found successfully",
-    data: result.data,
   });
 });
 
@@ -179,7 +164,7 @@ const getMyJobs = catchAsync(async (req: Request, res: Response) => {
     statusCode: StatusCodes.OK,
     success: true,
     message: "My jobs retrieved successfully",
-    data: result.data,
+    data: result.data
   });
 });
 
@@ -317,7 +302,6 @@ export const JobController = {
   createJob,
   getAllJobs,
   getActiveJobs,
-  searchJobs,
   getTrendingJobs,
   getExpiringJobs,
   getJobById,

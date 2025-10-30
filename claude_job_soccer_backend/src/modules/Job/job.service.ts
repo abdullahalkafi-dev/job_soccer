@@ -4,6 +4,7 @@ import { QueryBuilder } from "../../shared/builder/QueryBuilder";
 import AppError from "../../errors/AppError";
 import { Types } from "mongoose";
 import { StatusCodes } from "http-status-codes";
+import { SearchHistoryService, SearchEntityType } from "../searchHistory/searchHistory.service";
 
 
 /**
@@ -16,69 +17,104 @@ const createJob = async (jobData: Partial<IJob>): Promise<IJob> => {
 
 /**
  * Get all jobs with advanced filtering, searching, and pagination
- * OPTIMIZED: Uses compound indexes for common query patterns
+ * OPTIMIZED: Uses text index for search, compound indexes for filters
  */
 const getAllJobs = async (query: Record<string, any>) => {
-  // Searchable fields for text search
-  const jobSearchableFields = [
-    "jobTitle",
-    "position",
-    "location",
-    "jobOverview",
-  ];
+  // Track search term for history if provided
+  if (query.searchTerm && typeof query.searchTerm === 'string') {
+    // Don't await - fire and forget to avoid slowing down the query
+    SearchHistoryService.recordSearch(SearchEntityType.JOB, query.searchTerm).catch(err => 
+      console.error('Failed to record search history:', err)
+    );
+  }
 
-  // Filterable fields
-  const jobFilterableFields = [
-    "jobCategory",
-    "location",
-    "contractType",
-    "status",
-    "creator.creatorRole",
-    "position",
-  ];
+  // Build base query object
+  const queryFilter: any = {};
 
-  // Build query using QueryBuilder
-  const jobQuery = new QueryBuilder(Job.find(), query)
-    .search(jobSearchableFields)
-    .filter(jobFilterableFields)
-    .sort()
-    .paginate()
-    .fields();
+  // Use text search if searchTerm is provided (FAST - uses text index)
+  if (query.searchTerm) {
+    queryFilter.$text = { $search: query.searchTerm };
+  }
 
-  // Custom filters for salary range
+  // Status filter (default to active) - IMPORTANT: Put this first for index usage
+  queryFilter.status = query.status || "active";
+
+  // Apply filterable fields in order of index importance
+  if (query.jobCategory) queryFilter.jobCategory = query.jobCategory;
+  if (query.location) queryFilter.location = new RegExp(query.location, "i");
+  if (query.country) queryFilter.country = query.country;
+  if (query.contractType) queryFilter.contractType = query.contractType;
+  if (query.position) queryFilter.position = query.position;
+  if (query.creatorId) queryFilter["creator.creatorId"] = query.creatorId;
+  if (query["creator.creatorRole"]) queryFilter["creator.creatorRole"] = query["creator.creatorRole"];
+
+  // Salary range filters
   if (query.minSalary) {
-    jobQuery.modelQuery = jobQuery.modelQuery.where("salary.max").gte(Number(query.minSalary));
+    queryFilter["salary.min"] = { $gte: Number(query.minSalary) };
   }
   if (query.maxSalary) {
-    jobQuery.modelQuery = jobQuery.modelQuery.where("salary.min").lte(Number(query.maxSalary));
+    queryFilter["salary.max"] = { $lte: Number(query.maxSalary) };
   }
 
-  // Custom filters for requiredAiScore range
+  // AI Score range filters
   if (query.minRequiredAiScore) {
-    jobQuery.modelQuery = jobQuery.modelQuery.where("requiredAiScore").gte(Number(query.minRequiredAiScore));
+    queryFilter.requiredAiScore = { 
+      ...queryFilter.requiredAiScore, 
+      $gte: Number(query.minRequiredAiScore) 
+    };
   }
   if (query.maxRequiredAiScore) {
-    jobQuery.modelQuery = jobQuery.modelQuery.where("requiredAiScore").lte(Number(query.maxRequiredAiScore));
+    queryFilter.requiredAiScore = { 
+      ...queryFilter.requiredAiScore, 
+      $lte: Number(query.maxRequiredAiScore) 
+    };
   }
 
-  // Only show active jobs by default (unless specified)
-  if (!query.status) {
-    jobQuery.modelQuery = jobQuery.modelQuery.where("status").equals("active");
+  // Pagination
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 9999;
+  const skip = (page - 1) * limit;
+
+  // Sorting
+  let sortBy: any = { createdAt: -1 }; // Default sort
+  if (query.sortBy) {
+    const sortField = query.sortBy.startsWith('-') 
+      ? query.sortBy.substring(1) 
+      : query.sortBy;
+    const sortOrder = query.sortBy.startsWith('-') ? -1 : 1;
+    sortBy = { [sortField]: sortOrder };
+  } else if (query.searchTerm) {
+    // Sort by text relevance score when searching
+    sortBy = { score: { $meta: "textScore" } };
   }
 
-  // Populate creator info (with field selection for performance)
-  jobQuery.modelQuery = jobQuery.modelQuery.populate(
-    "creator.creatorId",
-    "firstName lastName email profileImage role"
-  );
+  // Build the query with projection for text score if needed
+  let selectFields: any = {};
+  if (query.searchTerm) {
+    selectFields.score = { $meta: "textScore" };
+  }
 
-  // Execute query with lean() for better performance
-  const result = await jobQuery.modelQuery.lean();
-  const meta = await jobQuery.countTotal();
+  // Execute queries in parallel for better performance
+  const [jobs, total] = await Promise.all([
+    Job.find(queryFilter)
+      .select(selectFields)
+      .sort(sortBy)
+      .skip(skip)
+      .limit(limit)
+      .populate("creator.creatorId", "firstName lastName email profileImage role")
+      .lean()
+      .exec(),
+    Job.countDocuments(queryFilter).exec(),
+  ]);
 
   return {
-    meta,
-    data: result,
+    data: jobs,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
   };
 };
 
@@ -126,10 +162,10 @@ const getActiveJobs = async (filters: {
 
   // Salary range filtering
   if (minSalary !== undefined) {
-    queryFilter["salary.max"] = { $gte: minSalary };
+    queryFilter["salary.min"] = { $gte: minSalary };
   }
   if (maxSalary !== undefined) {
-    queryFilter["salary.min"] = { $lte: maxSalary };
+    queryFilter["salary.max"] = { $lte: maxSalary };
   }
 
   // Required AI Score range filtering
@@ -160,37 +196,6 @@ const getActiveJobs = async (filters: {
       totalPages: Math.ceil(total / limit),
       total,
       limit,
-    },
-  };
-};
-
-/**
- * Full-text search across jobs
- * OPTIMIZED: Uses text index
- */
-const searchJobs = async (searchTerm: string, additionalFilters: any = {}) => {
-  if (!searchTerm || searchTerm.trim().length === 0) {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Search term is required");
-  }
-
-  const queryFilter: any = {
-    status: "active",
-    $text: { $search: searchTerm },
-    ...additionalFilters,
-  };
-
-  const jobs = await Job.find(queryFilter)
-    .select({ score: { $meta: "textScore" } })
-    .sort({ score: { $meta: "textScore" } })
-    .limit(50)
-    .populate("creator.creatorId", "firstName lastName email profileImage")
-    .lean();
-
-  return {
-    data: jobs,
-    meta: {
-      total: jobs.length,
-      searchTerm,
     },
   };
 };
@@ -480,7 +485,6 @@ export const JobService = {
   createJob,
   getAllJobs,
   getActiveJobs,
-  searchJobs,
   getJobById,
   getJobsByEmployer,
   getTrendingJobs,

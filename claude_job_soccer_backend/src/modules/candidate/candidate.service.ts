@@ -2,6 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import AppError from "../../errors/AppError";
 import { User } from "../user/user.model";
 import { CandidateRole } from "../user/user.interface";
+import { SearchHistoryService, SearchEntityType } from "../searchHistory/searchHistory.service";
 
 // Import Candidate Models
 import { AmateurPlayerCan } from "./amateurPlayerCan/amateurPlayerCan.model";
@@ -46,6 +47,11 @@ const searchCandidates = async (query: Record<string, unknown>) => {
     limit = 10,
     sortBy = "-profileAIScore",
   } = query;
+
+  // Record search term for history tracking
+  if (searchTerm) {
+    await SearchHistoryService.recordSearch(SearchEntityType.CANDIDATE, searchTerm as string);
+  }
 
   // Build base user query for candidates only
   let userQuery: any = {

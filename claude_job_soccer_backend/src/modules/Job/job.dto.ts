@@ -94,10 +94,13 @@ const getAllJobsDto = z.object({
     location: z.string().optional(),
     country: z.string().optional(),
     contractType: z.enum(["FullTime", "PartTime"]).optional(),
+    position: z.string().optional(),
     minSalary: z.string().optional(),
     maxSalary: z.string().optional(),
     minRequiredAiScore: z.string().optional(),
     maxRequiredAiScore: z.string().optional(),
+    creatorRole: z.string().optional(),
+    creatorId: z.string().optional(),
     status: z.enum(["active", "closed", "draft", "expired"]).optional(),
     page: z.string().optional(),
     limit: z.string().optional(),
@@ -105,21 +108,8 @@ const getAllJobsDto = z.object({
   }),
 });
 
-/**
- * Validation schema for searching jobs
- */
-const searchJobsDto = z.object({
-  query: z.object({
-    searchTerm: z.string().min(1, "Search term is required"),
-    jobCategory: z.string().optional(),
-    location: z.string().optional(),
-    contractType: z.enum(["FullTime", "PartTime"]).optional(),
-  }),
-});
-
 export const JobValidation = {
   createJobDto,
   updateJobDto,
   getAllJobsDto,
-  searchJobsDto,
 };

@@ -62,7 +62,7 @@ export class QueryBuilder<T> {
   }
   filter(regexSafeFields: string[] = []) {
     const queryObj = { ...this.query };
-    const excludeFields = ["searchTerm", "page", "limit", "sortBy", "fields"];
+    const excludeFields = ["searchTerm", "page", "limit", "sortBy", "fields", "minSalary", "maxSalary", "minRequiredAiScore", "maxRequiredAiScore"];
 
 
 

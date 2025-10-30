@@ -14,18 +14,35 @@ const router = express.Router();
 /**
  * GET /api/v1/jobs
  * Get all jobs with advanced filtering and pagination
- * Query params:
- *   - searchTerm: string (search in title, position, location, overview)
- *   - jobCategory: string (candidate role)
- *   - location: string
- *   - country: string
+ * 
+ * Query params (all optional):
+ *   SEARCH:
+ *   - searchTerm: string (search in jobTitle, position, location, jobOverview)
+ * 
+ *   FILTERS:
+ *   - jobCategory: string (e.g., "ProfessionalPlayer", "AmateurPlayer", "Coach")
+ *   - location: string (e.g., "New York", "London")
+ *   - country: string (e.g., "USA", "UK")
+ *   - position: string (e.g., "Striker", "Midfielder")
  *   - contractType: "FullTime" | "PartTime"
- *   - minSalary: number
- *   - maxSalary: number
- *   - status: "active" | "closed" | "draft" | "expired"
+ *   - status: "active" | "closed" | "draft" | "expired" (default: "active")
+ *   - creatorRole: string (employer type, e.g., "ProfessionalClub", "Academy")
+ *   - creatorId: string (specific employer's ObjectId)
+ * 
+ *   SALARY RANGE:
+ *   - minSalary: number (jobs with max salary >= this value)
+ *   - maxSalary: number (jobs with min salary <= this value)
+ * 
+ *   AI SCORE RANGE:
+ *   - minRequiredAiScore: number (0-100)
+ *   - maxRequiredAiScore: number (0-100)
+ * 
+ *   PAGINATION & SORTING:
  *   - page: number (default: 1)
- *   - limit: number (default: 20)
- *   - sortBy: string (default: -createdAt)
+ *   - limit: number (default: 9999)
+ *   - sortBy: string (e.g., "-createdAt", "salary.min", "-deadline")
+ * 
+ * Example: GET /api/v1/jobs?jobCategory=ProfessionalPlayer&location=London&minSalary=50000&page=1&limit=20
  */
 router.get(
   "/",
@@ -38,21 +55,6 @@ router.get(
  * Get only active jobs with filters
  */
 router.get("/active", JobController.getActiveJobs);
-
-/**
- * GET /api/v1/jobs/search
- * Full-text search across jobs
- * Query params:
- *   - searchTerm: string (required)
- *   - jobCategory: string (optional filter)
- *   - location: string (optional filter)
- *   - contractType: "FullTime" | "PartTime" (optional filter)
- */
-router.get(
-  "/search",
-  validateRequest(JobValidation.searchJobsDto),
-  JobController.searchJobs
-);
 
 /**
  * GET /api/v1/jobs/trending

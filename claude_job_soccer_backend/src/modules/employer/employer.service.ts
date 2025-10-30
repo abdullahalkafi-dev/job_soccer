@@ -2,6 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import AppError from "../../errors/AppError";
 import { User } from "../user/user.model";
 import { EmployerRole } from "../user/user.interface";
+import { SearchHistoryService, SearchEntityType } from "../searchHistory/searchHistory.service";
 
 // Import Employer Models
 import { AcademyEmp } from "./academyEmp/academyEmp.model";
@@ -49,6 +50,11 @@ const searchEmployers = async (query: Record<string, unknown>) => {
     limit = 10,
     sortBy = "-createdAt",
   } = query;
+
+  // Record search term for history tracking
+  if (searchTerm) {
+    await SearchHistoryService.recordSearch(SearchEntityType.EMPLOYER, searchTerm as string);
+  }
 
   // Build base user query for employers only
   let userQuery: any = {
