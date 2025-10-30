@@ -7,6 +7,7 @@ import { JobRoutes } from "../modules/Job/job.route";
 import { SearchHistoryRoutes } from "../modules/searchHistory/searchHistory.route";
 import SavedJobRoutes from "../modules/savedJobs/savedJobs.route";
 import FollowRoutes from "../modules/follow/follow.route";
+import { FriendListRoutes } from "../modules/friendlist/friendlist.route";
 
 
 const router: Router = express.Router();
@@ -44,7 +45,10 @@ const apiRoutes = [
     path: "/follow",
     route: FollowRoutes,
   },
- 
+  {
+    path: "/friendlist",
+    route: FriendListRoutes,
+  },
 ];
 
 apiRoutes.forEach((route) => router.use(route.path, route.route));
