@@ -211,9 +211,7 @@ const getFriendsCount = catchAsync(async (req: Request, res: Response) => {
 const getPendingRequestsCount = catchAsync(
   async (req: Request, res: Response) => {
     const userId = req.user?.id;
-
     const count = await FriendListService.getPendingRequestsCount(userId!);
-
     sendResponse(res, {
       statusCode: StatusCodes.OK,
       success: true,

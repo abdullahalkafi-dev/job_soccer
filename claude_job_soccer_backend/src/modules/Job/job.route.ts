@@ -12,7 +12,8 @@ const router = express.Router();
  */
 
 /**
- * GET /api/v1/jobs
+ * GET /api/v1/
+ * 
  * Get all jobs with advanced filtering and pagination
  * 
  * Query params (all optional):
@@ -50,14 +51,17 @@ router.get(
   JobController.getAllJobs
 );
 
+
 /**
- * GET /api/v1/jobs/active
+ * GET /api/v1/jobs
+ * /active
  * Get only active jobs with filters
  */
 router.get("/active", JobController.getActiveJobs);
 
 /**
- * GET /api/v1/jobs/trending
+ * GET /api/v1/jobs
+ * /trending
  * Get trending/popular jobs based on application count
  * Query params:
  *   - limit: number (default: 10)
@@ -65,7 +69,8 @@ router.get("/active", JobController.getActiveJobs);
 router.get("/trending", JobController.getTrendingJobs);
 
 /**
- * GET /api/v1/jobs/expiring
+ * GET /api/v1/jobs
+ * /expiring
  * Get jobs expiring soon
  * Query params:
  *   - days: number (default: 7) - look ahead this many days
@@ -73,7 +78,8 @@ router.get("/trending", JobController.getTrendingJobs);
 router.get("/expiring", JobController.getExpiringJobs);
 
 /**
- * GET /api/v1/jobs/my/jobs
+ * GET /api/v1/jobs
+ * /my/jobs
  * Get jobs created by the authenticated user
  * Query params:
  *   - status: "active" | "closed" | "draft" | "expired" (optional)
@@ -87,7 +93,8 @@ router.get("/my/jobs", auth(UserType.EMPLOYER), JobController.getMyJobs);
 router.get("/my/stats", auth(UserType.EMPLOYER), JobController.getMyJobStats);
 
 /**
- * GET /api/v1/jobs/employer/:employerId
+ * GET /api/v1/jobs
+ * /employer/:employerId
  * Get all jobs posted by a specific employer
  * Query params:
  *   - status: "active" | "closed" | "draft" | "expired" (optional)
@@ -95,13 +102,15 @@ router.get("/my/stats", auth(UserType.EMPLOYER), JobController.getMyJobStats);
 router.get("/employer/:employerId", JobController.getJobsByEmployer);
 
 /**
- * GET /api/v1/jobs/stats/employer/:employerId
+ * GET /api/v1/jobs
+ * /stats/employer/:employerId
  * Get job statistics for a specific employer
  */
 router.get("/stats/employer/:employerId", JobController.getEmployerJobStats);
 
 /**
- * GET /api/v1/jobs/:id
+ * GET /api/v1/jobs
+ * /:id
  * Get a single job by ID
  */
 router.get("/:id", JobController.getJobById);
@@ -112,6 +121,7 @@ router.get("/:id", JobController.getJobById);
 
 /**
  * POST /api/v1/jobs
+ * 
  * Create a new job posting (Employer only)
  */
 router.post(
@@ -131,7 +141,8 @@ router.post(
 router.post("/by-categories", auth(), JobController.getJobsByCategories);
 
 /**
- * PATCH /api/v1/jobs/:id
+ * PATCH /api/v1/jobs
+ * /:id
  * Update a job (owner only)
  */
 router.patch(
@@ -142,7 +153,8 @@ router.patch(
 );
 
 /**
- * DELETE /api/v1/jobs/:id
+ * DELETE /api/v1/jobs
+ * /:id
  * Delete a job (soft delete - owner only)
  */
 router.delete("/:id", auth(UserType.EMPLOYER), JobController.deleteJob);
@@ -158,7 +170,8 @@ router.post("/:id/apply", auth(UserType.CANDIDATE), JobController.incrementAppli
  */
 
 /**
- * POST /api/v1/jobs/bulk-update-status
+ * POST /api/v1/jobs
+ * /bulk-update-status
  * Bulk update job status (admin only)
  * Body:
  *   - jobIds: string[]
@@ -171,7 +184,8 @@ router.post(
 );
 
 /**
- * POST /api/v1/jobs/expire-old
+ * POST /api/v1/jobs
+ * /expire-old
  * Expire old jobs past their deadline (admin/cron job)
  */
 router.post("/expire-old", auth(UserType.ADMIN), JobController.expireOldJobs);
