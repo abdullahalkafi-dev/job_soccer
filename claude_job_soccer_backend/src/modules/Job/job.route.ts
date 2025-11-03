@@ -53,14 +53,14 @@ router.get(
 
 
 /**
- * GET /api/v1/jobs
+ * GET /api/v1/job
  * /active
  * Get only active jobs with filters
  */
 router.get("/active", JobController.getActiveJobs);
 
 /**
- * GET /api/v1/jobs
+ * GET /api/v1/job
  * /trending
  * Get trending/popular jobs based on application count
  * Query params:
@@ -69,7 +69,7 @@ router.get("/active", JobController.getActiveJobs);
 router.get("/trending", JobController.getTrendingJobs);
 
 /**
- * GET /api/v1/jobs
+ * GET /api/v1/job
  * /expiring
  * Get jobs expiring soon
  * Query params:
@@ -78,7 +78,7 @@ router.get("/trending", JobController.getTrendingJobs);
 router.get("/expiring", JobController.getExpiringJobs);
 
 /**
- * GET /api/v1/jobs
+ * GET /api/v1/job
  * /my/jobs
  * Get jobs created by the authenticated user
  * Query params:
@@ -87,13 +87,13 @@ router.get("/expiring", JobController.getExpiringJobs);
 router.get("/my/jobs", auth(UserType.EMPLOYER), JobController.getMyJobs);
 
 /**
- * GET /api/v1/jobs/my/stats
+ * GET /api/v1/job/my/stats
  * Get job statistics for the authenticated user
  */
 router.get("/my/stats", auth(UserType.EMPLOYER), JobController.getMyJobStats);
 
 /**
- * GET /api/v1/jobs
+ * GET /api/v1/job
  * /employer/:employerId
  * Get all jobs posted by a specific employer
  * Query params:
@@ -102,14 +102,14 @@ router.get("/my/stats", auth(UserType.EMPLOYER), JobController.getMyJobStats);
 router.get("/employer/:employerId", JobController.getJobsByEmployer);
 
 /**
- * GET /api/v1/jobs
+ * GET /api/v1/job
  * /stats/employer/:employerId
  * Get job statistics for a specific employer
  */
 router.get("/stats/employer/:employerId", JobController.getEmployerJobStats);
 
 /**
- * GET /api/v1/jobs
+ * GET /api/v1/job
  * /:id
  * Get a single job by ID
  */
@@ -120,7 +120,7 @@ router.get("/:id", JobController.getJobById);
  */
 
 /**
- * POST /api/v1/jobs
+ * POST /api/v1/job
  * 
  * Create a new job posting (Employer only)
  */
@@ -132,13 +132,13 @@ router.post(
 );
 
 /**
- * POST /api/v1/jobs/by-categories
+ * POST /api/v1/job/by-categories
  * Get jobs by multiple categories (for recommendations)
  * Body:
  *   - categories: string[]
  *   - limit: number (optional, default: 20)
  */
-router.post("/by-categories", auth(), JobController.getJobsByCategories);
+router.post("/by-categories",  JobController.getJobsByCategories);
 
 /**
  * PATCH /api/v1/jobs

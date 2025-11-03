@@ -43,7 +43,7 @@ const createJobDto = z.object({
     additionalRequirements: z.string().optional(),
     country: z.string().optional(),
     status: z.enum(["active", "closed", "draft", "expired"]).optional(),
-  }),
+  }).strict(),
 });
 
 /**
@@ -81,7 +81,7 @@ const updateJobDto = z.object({
       .optional(),
     country: z.string().optional(),
     status: z.enum(["active", "closed", "draft", "expired"]).optional(),
-  }),
+  }).strict(),
 });
 
 /**
