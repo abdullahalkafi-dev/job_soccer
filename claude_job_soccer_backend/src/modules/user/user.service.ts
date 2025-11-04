@@ -126,15 +126,71 @@ const updateUserRole = async (id: string, role: "USER" | "ADMIN") => {
   return user;
 };
 
-const getMe = async (userId: string) => {
-  // If not cached, query the database using lean with virtuals enabled.
-  const user = await User.findById(userId).populate("address").lean({
+const getMe = async (userId: string): Promise<any> => {
+  // Query the database using lean with virtuals enabled.
+  const user = await User.findById(userId).lean({
     virtuals: true,
   });
   if (!user) {
     throw new AppError(StatusCodes.NOT_FOUND, "User not found");
   }
-  return user;
+
+  // Fetch profile based on userType and role
+  let profile: any = null;
+  
+  if (user.profileId) {
+    if (user.userType === "candidate") {
+      switch (user.role) {
+        case CandidateRole.AMATEUR_PLAYER:
+          profile = await AmateurPlayerCan.findById(user.profileId).lean();
+          break;
+        case CandidateRole.PROFESSIONAL_PLAYER:
+          profile = await ProfessionalPlayerCan.findById(user.profileId).lean();
+          break;
+        case CandidateRole.ON_FIELD_STAFF:
+          profile = await OnFieldStaffCan.findById(user.profileId).lean();
+          break;
+        case CandidateRole.OFFICE_STAFF:
+          profile = await OfficeStaffCan.findById(user.profileId).lean();
+          break;
+        case CandidateRole.HIGH_SCHOOL:
+          profile = await HighSchoolCan.findById(user.profileId).lean();
+          break;
+        case CandidateRole.COLLEGE_UNIVERSITY:
+          profile = await CollegeOrUniversity.findById(user.profileId).lean();
+          break;
+      }
+    } else if (user.userType === "employer") {
+      switch (user.role) {
+        case EmployerRole.ACADEMY:
+          profile = await AcademyEmp.findById(user.profileId).lean();
+          break;
+        case EmployerRole.AGENT:
+          profile = await AgentEmp.findById(user.profileId).lean();
+          break;
+        case EmployerRole.AMATEUR_CLUB:
+          profile = await AmateurClubEmp.findById(user.profileId).lean();
+          break;
+        case EmployerRole.COLLEGE_UNIVERSITY:
+          profile = await CollegeOrUniversityEmp.findById(user.profileId).lean();
+          break;
+        case EmployerRole.CONSULTING_COMPANY:
+          profile = await ConsultingCompanyEmp.findById(user.profileId).lean();
+          break;
+        case EmployerRole.HIGH_SCHOOL:
+          profile = await HighSchoolEmp.findById(user.profileId).lean();
+          break;
+        case EmployerRole.PROFESSIONAL_CLUB:
+          profile = await ProfessionalClubEmp.findById(user.profileId).lean();
+          break;
+      }
+    }
+  }
+
+  return {
+    ...user,
+    profile,
+  };
 };
 
 const addUserProfile = async (payload: {

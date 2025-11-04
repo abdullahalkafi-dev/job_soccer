@@ -15,7 +15,7 @@ const createOtpEntry = async (
     throw new AppError(400, "Invalid OTP entry");
   }
 
-const oldOtpEntry = await OneTimeCode.findOneAndDelete({
+  const oldOtpEntry = await OneTimeCode.findOneAndDelete({
     userId: parseResult.data.userId,
     reason: parseResult.data.reason,
   });
