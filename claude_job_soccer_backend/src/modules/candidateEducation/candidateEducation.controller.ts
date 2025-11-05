@@ -38,7 +38,7 @@ const updateEducation = catchAsync(async (req: Request, res: Response) => {
   const updateData = req.body;
 
   // Extract userId from auth middleware (assuming it's in req.user)
-  const userId = (req as any).user?.userId || updateData.userId;
+  const userId = (req as any).user?.id || updateData.userId;
 
   if (!userId) {
     throw new AppError(StatusCodes.UNAUTHORIZED, "User ID is required");
@@ -66,7 +66,7 @@ const removeEducation = catchAsync(async (req: Request, res: Response) => {
   const { educationId } = req.params;
 
   // Extract userId from auth middleware
-  const userId = (req as any).user?.userId;
+  const userId = (req as any).user?.id;
 
   if (!userId) {
     throw new AppError(StatusCodes.UNAUTHORIZED, "User ID is required");
