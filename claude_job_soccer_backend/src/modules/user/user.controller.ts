@@ -108,6 +108,12 @@ const addUserProfile = catchAsync(async (req: Request, res: Response) => {
     // Parse profile data from request
     const profileData = req.body.data ? JSON.parse(req.body.data) : req.body;
     
+    // Extract profile image if present
+    let profileImage = null;
+    if (req.files && "image" in req.files && req.files.image[0]) {
+      profileImage = req.files.image[0].path.replace('/app/uploads', '');
+    }
+    
     // Extract video files if present
     const videoFiles = extractVideoFiles(req);
     
@@ -127,6 +133,7 @@ const addUserProfile = catchAsync(async (req: Request, res: Response) => {
     const result = await UserServices.addUserProfile({
       userId,
       data: profileData,
+      profileImage,
       videoFiles,
       videoMetadata,
       videoTitles,

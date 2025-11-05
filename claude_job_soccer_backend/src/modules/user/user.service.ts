@@ -196,11 +196,12 @@ const getMe = async (userId: string): Promise<any> => {
 const addUserProfile = async (payload: {
   userId: string;
   data: any;
+  profileImage?: string | null;
   videoFiles?: Express.Multer.File[];
   videoMetadata?: any[];
   videoTitles?: string[];
 }) => {
-  const { userId, data, videoFiles = [], videoMetadata, videoTitles } = payload;
+  const { userId, data, profileImage, videoFiles = [], videoMetadata, videoTitles } = payload;
 
   // Check if user exists
   const user = await User.findById(userId);
@@ -217,7 +218,6 @@ const addUserProfile = async (payload: {
   }
 
   let validatedData: any;
-  let profileModel: any;
   let profileId: string;
 
   // Handle Candidate Profiles
@@ -483,10 +483,15 @@ const addUserProfile = async (payload: {
     );
   }
 
-  // Update user with profileId
+  // Update user with profileId and profileImage
+  const updateData: any = { profileId };
+  if (profileImage) {
+    updateData.profileImage = profileImage;
+  }
+  
   const updatedUser = await User.findByIdAndUpdate(
     userId,
-    { profileId },
+    updateData,
     { new: true }
   );
 

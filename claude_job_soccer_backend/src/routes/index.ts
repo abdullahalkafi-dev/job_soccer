@@ -10,6 +10,7 @@ import FollowRoutes from "../modules/follow/follow.route";
 import { FriendListRoutes } from "../modules/friendlist/friendlist.route";
 import CandidateShortListRoutes from "../modules/candidateShortList/candidateShortList.route";
 import CandidateResumeRoutes from "../modules/candidateResume/candidateResume.route";
+import { CandidateEducationRoutes } from "../modules/candidateEducation/candidateEducation.route";
 
 
 const router: Router = express.Router();
@@ -58,6 +59,10 @@ const apiRoutes = [
   {
     path: "/candidate-resume",
     route: CandidateResumeRoutes,
+  },
+  {
+    path: "/candidate-education",
+    route: CandidateEducationRoutes,
   },
 ];
 
