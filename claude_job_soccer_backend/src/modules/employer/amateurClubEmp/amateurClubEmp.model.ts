@@ -7,7 +7,6 @@ export type TAmateurClubEmp = {
   address: string;
   founded: string;
   nationality: string;
-  position: string;
   location: string;
   level: string;
   website: string;
@@ -35,10 +34,6 @@ const amateurClubEmpSchema = new Schema<TAmateurClubEmp>({
     required: true,
   },
   nationality: {
-    type: String,
-    required: true,
-  },
-  position: {
     type: String,
     required: true,
   },

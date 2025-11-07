@@ -34,7 +34,7 @@ export type THighSchoolCan = {
   height: { size: number; unit: string };
   currentClub: string;
   category: string;
-  position: TPosition; // need update
+  position: TPosition; // TODO maybe change to enum
   agent: string;
   satOrAct: string;
   availability: TAvailability;

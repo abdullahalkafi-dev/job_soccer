@@ -42,19 +42,16 @@ export type TAmateurPlayerCan = {
   phoneNumber: string;
   gender: string;
   height: { size: number; unit: string };
-  nationalTeamCategory: TNationalTeamCategory;
   currentClub: string;
-  division: string;
+  nationalTeamCategory: TNationalTeamCategory;
   position: TPosition;
   agent: string;
+  socialMedia: string;
   country: (typeof countryList)[number];
   availability: TAvailability;
   weight: { size: number; unit: string };
-  nationalTeamGames: string;
-  socialMedia: string;
   foot: TFoot;
-  teamsJoined: string;
-  contractExpires: string;
+  league: string;
   videos: {
     url: string;
     duration: number; // in seconds
@@ -80,7 +77,6 @@ const amateurPlayerCanSchema = new Schema<TAmateurPlayerCan>(
       required: true,
     },
     currentClub: { type: String, required: true, trim: true },
-    division: { type: String, required: true, trim: true },
     position: {
       type: String,
       enum: Object.values(TPosition),
@@ -101,15 +97,13 @@ const amateurPlayerCanSchema = new Schema<TAmateurPlayerCan>(
       size: { type: Number, required: true },
       unit: { type: String, required: true, enum: ["kg", "lb"] },
     },
-    nationalTeamGames: { type: String, required: true, trim: true },
     socialMedia: { type: String, required: true, trim: true },
     foot: {
       type: String,
       enum: Object.values(TFoot),
       required: true,
     },
-    teamsJoined: { type: String, required: true, trim: true },
-    contractExpires: { type: String, required: true, trim: true },
+    league: { type: String, required: true, trim: true },
     videos: [
       {
         url: { type: String, required: true, trim: true },

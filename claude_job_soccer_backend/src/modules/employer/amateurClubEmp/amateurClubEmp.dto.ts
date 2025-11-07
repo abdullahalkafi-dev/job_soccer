@@ -6,7 +6,6 @@ const createAmateurClubEmpDto = z.object({
     address: z.string().trim().min(1, "Address is required"),
     founded: z.string().trim().min(1, "Founded is required"),
     nationality: z.string().trim().min(1, "Nationality is required"),
-    position: z.string().trim().min(1, "Position is required"),
     location: z.string().trim().min(1, "Location is required"),
     level: z.string().trim().min(1, "Level is required"),
     website: z.string().trim().min(1, "Website is required"),

@@ -32,7 +32,6 @@ const createAmateurPlayerCanDto = z.object({
     "U21",
   ]),
   currentClub: z.string().trim().min(1, "Current club is required"),
-  division: z.string().trim().min(1, "Division is required"),
   position: z.enum([
     "GK",
     "Central back",
@@ -52,14 +51,9 @@ const createAmateurPlayerCanDto = z.object({
     size: z.number().positive("Weight must be positive"),
     unit: z.enum(["kg", "lb"]),
   }),
-  nationalTeamGames: z
-    .string()
-    .trim()
-    .min(1, "National team games is required"),
   socialMedia: z.string().trim().min(1, "Social media is required"),
   foot: z.enum(["Right", "Left", "Both"]),
-  teamsJoined: z.string().trim().min(1, "Teams joined is required"),
-  contractExpires: z.string().trim().min(1, "Contract expires is required"),
+  league: z.string().trim().min(1, "League is required"),
   // Videos will be handled separately through file upload (2 Highlights videos required)
   videos: z
     .array(
@@ -86,5 +80,3 @@ export const AmateurPlayerCanDto = {
   createAmateurPlayerCanDto,
   updateAmateurPlayerCanDto,
 };
-
-
