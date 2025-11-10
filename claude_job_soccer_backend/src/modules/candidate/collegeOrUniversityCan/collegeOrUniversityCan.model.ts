@@ -35,7 +35,7 @@ export type TCollegeOrUniversity = {
   currentClub: string;
   category: string;
   position: TPosition; // need update
-  agent: string;
+  agent?: string;
   socialMedia: string;
   satOrAct: string;
   availability: TAvailability;
@@ -73,7 +73,7 @@ const collegeOrUniversitySchema = new Schema<TCollegeOrUniversity>(
       enum: Object.values(TPosition),
       required: true,
     },
-    agent: { type: String, required: true, trim: true },
+    agent: { type: String, required: false, trim: true },
     socialMedia: { type: String, required: true, trim: true },
     satOrAct: { type: String, required: true, trim: true },
     availability: {

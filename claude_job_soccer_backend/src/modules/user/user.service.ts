@@ -6,9 +6,6 @@ import { CandidateRole, EmployerRole } from "./user.interface";
 import { QueryBuilder } from "../../shared/builder/QueryBuilder";
 import { unlinkFileSync } from "../../shared/util/unlinkFile";
 
-// Import OpenAI service
-import { generateProfileScore } from "../../shared/openai";
-
 // Import video helpers
 import {
   validateVideos,
@@ -276,33 +273,38 @@ const addUserProfile = async (payload: {
         break;
 
       case CandidateRole.ON_FIELD_STAFF:
-        // Validate staff videos if provided
-        if (videoFiles.length > 0) {
-          if (!videoMetadata) {
-            await cleanupUploadedFiles(videoFiles);
-            throw new AppError(
-              StatusCodes.BAD_REQUEST,
-              "Video metadata (videoMeta) is required for staff profiles"
-            );
-          }
-
-          const validation = await validateVideos(
-            data.position,
-            videoMetadata,
-            videoFiles
+        // Videos are REQUIRED for all On Field Staff positions
+        if (videoFiles.length === 0) {
+          throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Videos are required for ${data.position || 'On Field Staff'}. Please upload the required videos.`
           );
-          if (!validation.isValid) {
-            await cleanupUploadedFiles(videoFiles);
-            throw new AppError(StatusCodes.BAD_REQUEST, validation.error!);
-          }
-
-          // Process staff videos
-          const processedVideos = await processVideos(
-            videoFiles,
-            videoMetadata
-          );
-          data.videos = processedVideos;
         }
+
+        if (!videoMetadata) {
+          await cleanupUploadedFiles(videoFiles);
+          throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            "Video metadata (videoMeta) is required for staff profiles"
+          );
+        }
+
+        const onFieldValidation = await validateVideos(
+          data.position,
+          videoMetadata,
+          videoFiles
+        );
+        if (!onFieldValidation.isValid) {
+          await cleanupUploadedFiles(videoFiles);
+          throw new AppError(StatusCodes.BAD_REQUEST, onFieldValidation.error!);
+        }
+
+        // Process staff videos
+        const onFieldProcessedVideos = await processVideos(
+          videoFiles,
+          videoMetadata
+        );
+        data.videos = onFieldProcessedVideos;
 
         validatedData = OnFieldStaffCanDto.createOnFieldStaffCanDto.parse(data);
         const onFieldStaff = await OnFieldStaffCan.create(validatedData);
@@ -376,33 +378,38 @@ const addUserProfile = async (payload: {
         break;
 
       case CandidateRole.OFFICE_STAFF:
-        // Validate office staff videos if provided
-        if (videoFiles.length > 0) {
-          if (!videoMetadata) {
-            await cleanupUploadedFiles(videoFiles);
-            throw new AppError(
-              StatusCodes.BAD_REQUEST,
-              "Video metadata (videoMeta) is required for staff profiles"
-            );
-          }
-
-          const validation = await validateVideos(
-            data.position,
-            videoMetadata,
-            videoFiles
+        // Office Staff requires at least 1 video (Pre-recorded Interview mandatory)
+        if (videoFiles.length === 0) {
+          throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            `Office Staff requires at least 1 video (Pre-recorded Interview is mandatory)`
           );
-          if (!validation.isValid) {
-            await cleanupUploadedFiles(videoFiles);
-            throw new AppError(StatusCodes.BAD_REQUEST, validation.error!);
-          }
-
-          // Process staff videos
-          const processedVideos = await processVideos(
-            videoFiles,
-            videoMetadata
-          );
-          data.videos = processedVideos;
         }
+
+        if (!videoMetadata) {
+          await cleanupUploadedFiles(videoFiles);
+          throw new AppError(
+            StatusCodes.BAD_REQUEST,
+            "Video metadata (videoMeta) is required for staff profiles"
+          );
+        }
+
+        const officeStaffValidation = await validateVideos(
+          data.position,
+          videoMetadata,
+          videoFiles
+        );
+        if (!officeStaffValidation.isValid) {
+          await cleanupUploadedFiles(videoFiles);
+          throw new AppError(StatusCodes.BAD_REQUEST, officeStaffValidation.error!);
+        }
+
+        // Process staff videos
+        const officeStaffProcessedVideos = await processVideos(
+          videoFiles,
+          videoMetadata
+        );
+        data.videos = officeStaffProcessedVideos;
 
         validatedData = OfficeStaffCanDto.createOfficeStaffCanDto.parse(data);
         const officeStaff = await OfficeStaffCan.create(validatedData);
@@ -500,25 +507,6 @@ const addUserProfile = async (payload: {
       StatusCodes.INTERNAL_SERVER_ERROR,
       "Failed to update user with profile ID"
     );
-  }
-
-  // Generate AI profile score for candidates (non-blocking)
-  if (user.userType === "candidate") {
-    try {
-      const profileScore = await generateProfileScore(
-        validatedData,
-        user.role as CandidateRole
-      );
-      
-      // Update user with AI score
-      await User.findByIdAndUpdate(userId, { profileAIScore: profileScore });
-      
-      // Update the returned user object
-      updatedUser.profileAIScore = profileScore;
-    } catch (error) {
-      // Log error but don't fail the profile creation
-      console.error("Error generating AI profile score:", error);
-    }
   }
 
   return {

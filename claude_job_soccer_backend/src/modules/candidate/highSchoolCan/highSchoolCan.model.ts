@@ -34,8 +34,8 @@ export type THighSchoolCan = {
   height: { size: number; unit: string };
   currentClub: string;
   category: string;
-  position: TPosition; // TODO maybe change to enum
-  agent: string;
+  position: TPosition; 
+  agent?: string;
   satOrAct: string;
   availability: TAvailability;
   weight: { size: number; unit: string };
@@ -71,7 +71,7 @@ const highSchoolCanSchema = new Schema<THighSchoolCan>(
       enum: Object.values(TPosition),
       required: true,
     },
-    agent: { type: String, required: true, trim: true },
+    agent: { type: String, required: false, trim: true },
     satOrAct: { type: String, required: true, trim: true },
     availability: {
       type: String,

@@ -45,7 +45,7 @@ export type TAmateurPlayerCan = {
   currentClub: string;
   nationalTeamCategory: TNationalTeamCategory;
   position: TPosition;
-  agent: string;
+  agent?: string;
   socialMedia: string;
   country: (typeof countryList)[number];
   availability: TAvailability;
@@ -82,7 +82,7 @@ const amateurPlayerCanSchema = new Schema<TAmateurPlayerCan>(
       enum: Object.values(TPosition),
       required: true,
     },
-    agent: { type: String, required: true, trim: true },
+    agent: { type: String, required: false, trim: true },
     country: {
       type: String,
       enum: countryList,

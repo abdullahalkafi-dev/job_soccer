@@ -46,7 +46,7 @@ export type TProfessionalPlayerCan = {
   currentClub: string;
   division: string;
   position: TPosition;
-  agent: string;
+  agent?: string;
   country: (typeof countryList)[number];
   availability: TAvailability;
   weight: { size: number; unit: string };
@@ -86,7 +86,7 @@ const professionalPlayerCanSchema = new Schema<TProfessionalPlayerCan>(
             enum: Object.values(TPosition),
             required: true,
         },
-        agent: { type: String, required: true, trim: true },
+        agent: { type: String, required: false, trim: true },
         country: {
             type: String,
             enum: countryList,

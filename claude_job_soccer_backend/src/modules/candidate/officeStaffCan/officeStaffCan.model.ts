@@ -21,8 +21,7 @@ export type TOfficeStaffCan = {
   position: TPosition;
   languages: string;
   availability: string;
-  licensesNumber: string;
-  agent: string;
+  agent?: string;
   socialMedia: string;
   videos: {
     videoType: string; // From VideoType enum
@@ -45,9 +44,8 @@ const officeStaffSchema = new Schema<TOfficeStaffCan>(
       enum: countryList,
       required: true,
     },
-    licensesNumber: { type: String, required: true, trim: true },
     socialMedia: { type: String, required: true, trim: true },
-    agent: { type: String, required: true, trim: true },
+    agent: { type: String, required: false, trim: true },
     position: {
       type: String,
       enum: Object.values(TPosition),

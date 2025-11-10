@@ -34,8 +34,7 @@ const createOfficeStaffCanDto = z.object({
   ]),
   languages: z.string().trim().optional(),
   availability: z.string().trim().min(1, "Availability is required"),
-  licensesNumber: z.string().trim().min(1, "Licenses number is required"),
-  agent: z.string().trim().min(1, "Agent is required"),
+  agent: z.string().trim().min(1, "Agent is required").optional(),
   socialMedia: z.string().trim().min(1, "Social media is required"),
   // Videos will be handled separately through file upload
   videos: z.array(

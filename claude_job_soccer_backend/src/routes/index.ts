@@ -13,6 +13,7 @@ import CandidateResumeRoutes from "../modules/candidateResume/candidateResume.ro
 import { CandidateEducationRoutes } from "../modules/candidateEducation/candidateEducation.route";
 import { CandidateExperienceRoutes } from "../modules/candidateExperience/candidateExperience.route";
 import { CandidateLicensesAndCertificationRoutes } from "../modules/candidateLicensesAndCertification/candidateLicensesAndCertification.route";
+import { JobApplyRoutes } from "../modules/jobApply/jobApply.route";
 
 
 const router: Router = express.Router();
@@ -73,6 +74,10 @@ const apiRoutes = [
   {
     path: "/candidate-licenses-and-certifications",
     route: CandidateLicensesAndCertificationRoutes,
+  },
+  {
+    path: "/job-applications",
+    route: JobApplyRoutes,
   },
 ];
 

@@ -26,10 +26,9 @@ export type TOnFieldStaffCan = {
   league: string;
   gender: "male" | "female";
   country: (typeof countryList)[number];
-  licensesNumber: string;
   category: string;
   socialMedia: string;
-  agent: string;
+  agent?: string;
   position: TPosition;
   videos: {
     videoType: string; // From VideoType enum
@@ -55,10 +54,9 @@ const onFieldStaffCanSchema = new Schema<TOnFieldStaffCan>(
       required: true,
     },
     gender: { type: String, enum: ["male", "female"], required: true },
-    licensesNumber: { type: String, required: true, trim: true },
     category: { type: String, required: true, trim: true },
     socialMedia: { type: String, required: true, trim: true },
-    agent: { type: String, required: true, trim: true },
+    agent: { type: String, required: false, trim: true },
     position: {
       type: String,
       enum: Object.values(TPosition),

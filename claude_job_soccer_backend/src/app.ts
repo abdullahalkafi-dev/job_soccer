@@ -18,7 +18,7 @@ app.set("trust proxy", 1); // Trust first proxy (nginx)
 app.use(helmetConfig);
 app.use(
   cors({
-    origin: ["*","http://localhost:3000"],
+    origin: ["*","http://localhost:3000","http://10.10.12.125:3000","http://10.10.12.125:3001"],
     credentials: true,
   })
 );

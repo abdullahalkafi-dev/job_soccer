@@ -35,7 +35,7 @@ const createHighSchoolCanDto = z.object({
         "Forward",
         "Striker",
     ]),
-    agent: z.string().trim().min(1, "Agent is required"),
+    agent: z.string().trim().min(1, "Agent is required").optional(),
     satOrAct: z.string().trim().min(1, "SAT or ACT is required"),
     availability: z.enum(["Now", "Soon", "Later"]),
     weight: z.object({

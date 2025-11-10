@@ -57,7 +57,6 @@ formData.append('data', JSON.stringify({
   league: "Premier League",
   country: "United Kingdom",
   socialMedia: "@johndoe",
-  licensesNumber: "UEFA Pro"
 }));
 
 // 2. Video metadata as JSON array string
@@ -659,7 +658,6 @@ const uploadHeadCoachProfile = async (profileData, videos) => {
     league: "Premier League",
     country: "United Kingdom",
     socialMedia: "@pepteam",
-    licensesNumber: "UEFA Pro License"
   }));
   
   // Add video metadata (MUST match order of video files)

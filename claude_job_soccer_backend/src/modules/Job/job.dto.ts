@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CandidateRole } from "../user/user.interface";
 
 /**
  * Validation schema for creating a new job
@@ -13,7 +14,16 @@ const createJobDto = z.object({
     jobOverview: z
       .string()
       .min(10, "Job overview must be at least 10 characters"),
-    jobCategory: z.string(),
+    jobCategory: z.enum([
+      CandidateRole.PROFESSIONAL_PLAYER,
+      CandidateRole.AMATEUR_PLAYER,
+      CandidateRole.HIGH_SCHOOL,
+      CandidateRole.COLLEGE_UNIVERSITY,
+      CandidateRole.ON_FIELD_STAFF,
+      CandidateRole.OFFICE_STAFF,
+    ] as const, {
+      message: "Invalid candidate role for job category",
+    }),
     position: z.string().min(2, "Position is required"),
     contractType: z.enum(["FullTime", "PartTime"]),
     salary: z
@@ -60,7 +70,16 @@ const updateJobDto = z.object({
       })
       .optional(),
     jobOverview: z.string().min(10).optional(),
-    jobCategory: z.string().optional(),
+    jobCategory: z.enum([
+      CandidateRole.PROFESSIONAL_PLAYER,
+      CandidateRole.AMATEUR_PLAYER,
+      CandidateRole.HIGH_SCHOOL,
+      CandidateRole.COLLEGE_UNIVERSITY,
+      CandidateRole.ON_FIELD_STAFF,
+      CandidateRole.OFFICE_STAFF,
+    ] as const, {
+      message: "Invalid candidate role for job category",
+    }).optional(),
     position: z.string().min(2).optional(),
     contractType: z.enum(["FullTime", "PartTime"]).optional(),
     salary: z
@@ -90,7 +109,14 @@ const updateJobDto = z.object({
 const getAllJobsDto = z.object({
   query: z.object({
     searchTerm: z.string().optional(),
-    jobCategory: z.string().optional(),
+    jobCategory: z.enum([
+      CandidateRole.PROFESSIONAL_PLAYER,
+      CandidateRole.AMATEUR_PLAYER,
+      CandidateRole.HIGH_SCHOOL,
+      CandidateRole.COLLEGE_UNIVERSITY,
+      CandidateRole.ON_FIELD_STAFF,
+      CandidateRole.OFFICE_STAFF,
+    ] as const).optional(),
     location: z.string().optional(),
     country: z.string().optional(),
     contractType: z.enum(["FullTime", "PartTime"]).optional(),
