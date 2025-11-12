@@ -54,6 +54,14 @@ router.get(
 
 /**
  * GET /api/v1/job
+ * /counts-by-role
+ * Get job counts grouped by role for home page display
+ * Returns: [{ role: "Professional Player", jobCount: 4 }, ...]
+ */
+router.get("/counts-by-role", JobController.getJobCountsByRole);
+
+/**
+ * GET /api/v1/job
  * /active
  * Get only active jobs with filters
  */

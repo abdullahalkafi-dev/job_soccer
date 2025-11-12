@@ -10,7 +10,7 @@ export type TAmateurClubEmp = {
   location: string;
   level: string;
   website: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   clubContact: string;
   clubDescription: string;
 };
@@ -51,7 +51,7 @@ const amateurClubEmpSchema = new Schema<TAmateurClubEmp>({
   },
   phoneNumber: {
     type: String,
-    required: true,
+    required: false,
   },
   clubContact: {
     type: String,

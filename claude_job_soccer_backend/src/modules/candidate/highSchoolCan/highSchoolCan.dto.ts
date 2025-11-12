@@ -15,7 +15,7 @@ const createHighSchoolCanDto = z.object({
         .transform((date) => new Date(date)),
     placeOfBirth: z.string().trim().min(1, "Place of birth is required"),
     nationality: z.string().trim().min(1, "Nationality is required"),
-    phoneNumber: z.string().trim().min(1, "Phone number is required"),
+    phoneNumber: z.string().trim().min(1, "Phone number is required").optional(),
     gender: z.string().trim().min(1, "Gender is required"),
     height: z.object({
         size: z.number().positive("Height must be positive"),
@@ -36,7 +36,7 @@ const createHighSchoolCanDto = z.object({
         "Striker",
     ]),
     agent: z.string().trim().min(1, "Agent is required").optional(),
-    satOrAct: z.string().trim().min(1, "SAT or ACT is required"),
+    satOrAct: z.string().trim().min(1, "SAT or ACT is required").optional(),
     availability: z.enum(["Now", "Soon", "Later"]),
     weight: z.object({
         size: z.number().positive("Weight must be positive"),

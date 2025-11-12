@@ -20,6 +20,8 @@ import { CollegeOrUniversity } from "../candidate/collegeOrUniversityCan/college
 import { CandidateExperience } from "../candidateExperience/candidateExperience.model";
 import { CandidateEducation } from "../candidateEducation/candidateEducation.model";
 import { CandidateLicenseAndCertification } from "../candidateLicensesAndCertification/candidateLicensesAndCertification.model";
+import { CandidateEducationService } from "../candidateEducation/candidateEducation.service";
+import { CandidateLicensesAndCertificationService } from "../candidateLicensesAndCertification/candidateLicensesAndCertification.service";
 
 /**
  * Get candidate model based on role
@@ -51,7 +53,11 @@ const calculateYearsOfExperience = (experiences: any[]): number => {
   const currentDate = new Date();
 
   experiences.forEach((exp) => {
-    const startDate = new Date(exp.startYear, getMonthNumber(exp.startMonth), 1);
+    const startDate = new Date(
+      exp.startYear,
+      getMonthNumber(exp.startMonth),
+      1
+    );
     let endDate: Date;
 
     if (exp.isCurrentlyWorking) {
@@ -62,12 +68,13 @@ const calculateYearsOfExperience = (experiences: any[]): number => {
       return; // Skip if no end date and not currently working
     }
 
-    const months = (endDate.getFullYear() - startDate.getFullYear()) * 12 +
-                   (endDate.getMonth() - startDate.getMonth());
+    const months =
+      (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+      (endDate.getMonth() - startDate.getMonth());
     totalMonths += months > 0 ? months : 0;
   });
 
-  return Math.round(totalMonths / 12 * 10) / 10; // Round to 1 decimal place
+  return Math.round((totalMonths / 12) * 10) / 10; // Round to 1 decimal place
 };
 
 /**
@@ -75,17 +82,24 @@ const calculateYearsOfExperience = (experiences: any[]): number => {
  */
 const getMonthNumber = (monthName: string): number => {
   const months: Record<string, number> = {
-    January: 0, February: 1, March: 2, April: 3,
-    May: 4, June: 5, July: 6, August: 7,
-    September: 8, October: 9, November: 10, December: 11,
+    January: 0,
+    February: 1,
+    March: 2,
+    April: 3,
+    May: 4,
+    June: 5,
+    July: 6,
+    August: 7,
+    September: 8,
+    October: 9,
+    November: 10,
+    December: 11,
   };
   return months[monthName] || 0;
 };
 
 /**
  * Apply to a job
- * OPTIMIZED: Checks for duplicate applications, calculates AI match score, blocks low matches
- * ENHANCED: Includes experience, education, and certifications data for better AI matching
  */
 const applyToJob = async (
   candidateId: string,
@@ -106,17 +120,20 @@ const applyToJob = async (
     throw new AppError(StatusCodes.NOT_FOUND, "Job not found");
   }
   if (job.status !== "active") {
-    throw new AppError(StatusCodes.BAD_REQUEST, "This job is no longer accepting applications");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "This job is no longer accepting applications"
+    );
   }
 
-  // Check if candidate has already applied
+  // Check if candidate has already applied (including soft-deleted applications)
   const existingApplication = await JobApply.findOne({
     jobId,
     candidateId,
-    isDeleted: false,
   });
 
-  if (existingApplication) {
+  // If there's an active application, throw error
+  if (existingApplication && !existingApplication.isDeleted) {
     throw new AppError(
       StatusCodes.CONFLICT,
       "You have already applied to this job"
@@ -130,15 +147,23 @@ const applyToJob = async (
   }
 
   if (candidate.userType !== "candidate") {
-    throw new AppError(StatusCodes.BAD_REQUEST, "Only candidates can apply to jobs");
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Only candidates can apply to jobs"
+    );
   }
 
   // Get candidate's complete profile
   const candidateModel = getCandidateModel(candidate.role as CandidateRole);
-  const candidateProfile = await candidateModel.findById(candidate.profileId).lean();
+  const candidateProfile = await candidateModel
+    .findById(candidate.profileId)
+    .lean();
 
   if (!candidateProfile) {
-    throw new AppError(StatusCodes.NOT_FOUND, "Candidate profile not found. Please complete your profile before applying.");
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "Candidate profile not found. Please complete your profile before applying."
+    );
   }
 
   // Fetch supplementary data (experience, education, certifications) if available
@@ -187,20 +212,36 @@ const applyToJob = async (
     );
   }
 
-  // Create application
-  const application = await JobApply.create({
-    jobId,
-    candidateId,
-    appliedAt: new Date(),
-    aiMatchPercentage,
-    resumeUrl,
-    isDeleted: false,
-  });
+  let application;
+
+  // If there's a previously withdrawn application, reactivate it
+  if (existingApplication && existingApplication.isDeleted) {
+    application = await JobApply.findByIdAndUpdate(
+      existingApplication._id,
+      {
+        appliedAt: new Date(),
+        aiMatchPercentage,
+        resumeUrl,
+        isDeleted: false,
+      },
+      { new: true }
+    );
+  } else {
+    // Create new application
+    application = await JobApply.create({
+      jobId,
+      candidateId,
+      appliedAt: new Date(),
+      aiMatchPercentage,
+      resumeUrl,
+      isDeleted: false,
+    });
+  }
 
   // Increment job application count
   await Job.updateOne({ _id: jobId }, { $inc: { applicationCount: 1 } });
 
-  return application.toObject();
+  return application!.toObject();
 };
 
 /**
@@ -246,7 +287,10 @@ const getApplicationsByJob = async (
     .sort(sortBy)
     .skip(skip)
     .limit(limit)
-    .populate("candidateId", "firstName lastName email profileImage profileAIScore role")
+    .populate(
+      "candidateId",
+      "firstName lastName email profileImage role"
+    )
     .lean();
 
   // Get total count for pagination
@@ -307,6 +351,16 @@ const getApplicantProfile = async (candidateId: string) => {
   if (!profile) {
     throw new AppError(StatusCodes.NOT_FOUND, "Candidate profile not found");
   }
+  const educations = await CandidateEducationService.getAllEducationsByUser(
+    candidateId
+  );
+  const experiences = await CandidateEducationService.getAllEducationsByUser(
+    candidateId
+  );
+  const certifications =
+    await CandidateLicensesAndCertificationService.getAllLicensesAndCertificationsByUser(
+      candidateId
+    );
 
   // Return combined user and profile data
   return {
@@ -316,8 +370,10 @@ const getApplicantProfile = async (candidateId: string) => {
     email: user.email,
     role: user.role,
     profileImage: user.profileImage,
-    profileAIScore: user.profileAIScore,
     profile,
+    educations,
+    experiences,
+    certifications,
   };
 };
 

@@ -4,6 +4,7 @@ import { CandidateLicenseAndCertification } from "./candidateLicensesAndCertific
 import { TCandidateLicenseAndCertification } from "./candidateLicensesAndCertification.interface";
 import { User } from "../user/user.model";
 import { UserType } from "../user/user.interface";
+import { candidateLicensesAndCertificationCache } from "./candidateLicensesAndCertification.cache";
 
 /**
  * Add a new license and certification record for a candidate
@@ -41,6 +42,9 @@ const addLicenseAndCertification = async (
     candidateRole: user.role,
   });
 
+  // Invalidate cache after adding
+  await candidateLicensesAndCertificationCache.invalidateUserCache(userId);
+
   return newLicense;
 };
 
@@ -58,15 +62,19 @@ const updateLicenseAndCertification = async (
   });
 
   if (!license) {
-    throw new AppError(StatusCodes.NOT_FOUND, "License and certification record not found");
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "License and certification record not found"
+    );
   }
 
   // Update the license and certification record
-  const updatedLicense = await CandidateLicenseAndCertification.findByIdAndUpdate(
-    licenseId,
-    { $set: updateData },
-    { new: true, runValidators: true }
-  );
+  const updatedLicense =
+    await CandidateLicenseAndCertification.findByIdAndUpdate(
+      licenseId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
 
   if (!updatedLicense) {
     throw new AppError(
@@ -74,6 +82,12 @@ const updateLicenseAndCertification = async (
       "Failed to update license and certification record"
     );
   }
+
+  // Invalidate cache after updating
+  await candidateLicensesAndCertificationCache.invalidateUserCache(userId);
+  await candidateLicensesAndCertificationCache.deleteCache(
+    candidateLicensesAndCertificationCache.getCacheKey.byId(licenseId)
+  );
 
   return updatedLicense;
 };
@@ -91,10 +105,19 @@ const removeLicenseAndCertification = async (
   });
 
   if (!license) {
-    throw new AppError(StatusCodes.NOT_FOUND, "License and certification record not found");
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "License and certification record not found"
+    );
   }
 
   await CandidateLicenseAndCertification.deleteOne({ _id: licenseId });
+
+  // Invalidate cache after deleting
+  await candidateLicensesAndCertificationCache.invalidateUserCache(userId);
+  await candidateLicensesAndCertificationCache.deleteCache(
+    candidateLicensesAndCertificationCache.getCacheKey.byId(licenseId)
+  );
 };
 
 /**
@@ -103,11 +126,32 @@ const removeLicenseAndCertification = async (
 const getAllLicensesAndCertificationsByUser = async (
   userId: string
 ): Promise<TCandidateLicenseAndCertification[]> => {
+  const cacheKey =
+    candidateLicensesAndCertificationCache.getCacheKey.byUser(userId);
+
+  // Try to get from cache
+  const cachedData = await candidateLicensesAndCertificationCache.getCache<
+    TCandidateLicenseAndCertification[]
+  >(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  // If not in cache, fetch from database
   const licenses = await CandidateLicenseAndCertification.find({ userId })
     .sort({ startYear: -1, startMonth: -1 }) // Most recent first
     .lean();
 
-  return licenses as TCandidateLicenseAndCertification[];
+  const result = licenses as TCandidateLicenseAndCertification[];
+
+  // Store in cache
+  await candidateLicensesAndCertificationCache.setCache(
+    cacheKey,
+    result,
+    candidateLicensesAndCertificationCache.CACHE_TTL
+  );
+
+  return result;
 };
 
 /**
@@ -116,13 +160,40 @@ const getAllLicensesAndCertificationsByUser = async (
 const getLicenseAndCertificationById = async (
   licenseId: string
 ): Promise<TCandidateLicenseAndCertification> => {
-  const license = await CandidateLicenseAndCertification.findById(licenseId).lean();
+  const cacheKey =
+    candidateLicensesAndCertificationCache.getCacheKey.byId(licenseId);
 
-  if (!license) {
-    throw new AppError(StatusCodes.NOT_FOUND, "License and certification record not found");
+  // Try to get from cache
+  const cachedData =
+    await candidateLicensesAndCertificationCache.getCache<TCandidateLicenseAndCertification>(
+      cacheKey
+    );
+  if (cachedData) {
+    return cachedData;
   }
 
-  return license as TCandidateLicenseAndCertification;
+  // If not in cache, fetch from database
+  const license = await CandidateLicenseAndCertification.findById(
+    licenseId
+  ).lean();
+
+  if (!license) {
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      "License and certification record not found"
+    );
+  }
+
+  const result = license as TCandidateLicenseAndCertification;
+
+  // Store in cache
+  await candidateLicensesAndCertificationCache.setCache(
+    cacheKey,
+    result,
+    candidateLicensesAndCertificationCache.CACHE_TTL
+  );
+
+  return result;
 };
 
 /**
@@ -132,6 +203,18 @@ const getLicenseAndCertificationById = async (
 const getLicensesAndCertificationsByUsers = async (
   userIds: string[]
 ): Promise<Record<string, TCandidateLicenseAndCertification[]>> => {
+  const cacheKey =
+    candidateLicensesAndCertificationCache.getCacheKey.byUsers(userIds);
+
+  // Try to get from cache
+  const cachedData = await candidateLicensesAndCertificationCache.getCache<
+    Record<string, TCandidateLicenseAndCertification[]>
+  >(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  // If not in cache, fetch from database
   const licenses = await CandidateLicenseAndCertification.find({
     userId: { $in: userIds },
   })
@@ -147,6 +230,13 @@ const getLicensesAndCertificationsByUsers = async (
     acc[key].push(license as TCandidateLicenseAndCertification);
     return acc;
   }, {} as Record<string, TCandidateLicenseAndCertification[]>);
+
+  // Store in cache
+  await candidateLicensesAndCertificationCache.setCache(
+    cacheKey,
+    grouped,
+    candidateLicensesAndCertificationCache.CACHE_TTL
+  );
 
   return grouped;
 };

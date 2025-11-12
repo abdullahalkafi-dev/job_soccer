@@ -21,7 +21,7 @@ RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
 
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 5013
+EXPOSE 5014
 
 ENV NODE_ENV=production
 

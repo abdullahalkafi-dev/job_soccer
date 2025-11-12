@@ -49,6 +49,12 @@ import { ConsultingCompanyEmp } from "../employer/consultingCompanyEmp/consultin
 import { HighSchoolEmp } from "../employer/highSchoolEmp/highSchoolEmp.model";
 
 import { ProfessionalClubEmp } from "../employer/professionalClubEmp/professionalClubEmp.model";
+import { CandidateEducation } from "../candidateEducation/candidateEducation.model";
+import { CandidateExperience } from "../candidateExperience/candidateExperience.model";
+import { CandidateLicenseAndCertification } from "../candidateLicensesAndCertification/candidateLicensesAndCertification.model";
+import { CandidateEducationService } from "../candidateEducation/candidateEducation.service";
+import { CandidateExperienceService } from "../candidateExperience/candidateExperience.service";
+import { CandidateLicensesAndCertificationService } from "../candidateLicensesAndCertification/candidateLicensesAndCertification.service";
 
 const getAllUsers = async (query: Record<string, unknown>) => {
   const userQuery = new QueryBuilder(User.find(), query)
@@ -183,10 +189,24 @@ const getMe = async (userId: string): Promise<any> => {
       }
     }
   }
+  const educations = await CandidateEducationService.getAllEducationsByUser(
+    userId
+  );
+  const experiences = await CandidateExperienceService.getAllExperiencesByUser(
+    userId
+  );
+  const certifications =
+    await CandidateLicensesAndCertificationService.getAllLicensesAndCertificationsByUser(
+      userId
+    );
+
 
   return {
     ...user,
     profile,
+    educations,
+    experiences,
+    certifications,
   };
 };
 

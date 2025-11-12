@@ -9,7 +9,7 @@ export type TProfessionalClubEmp = {
   founded: string;
   website: string;
   nationality: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   clubName: string;
   clubContact: string;
   clubDescription: string;
@@ -47,7 +47,7 @@ const professionalClubEmpSchema = new Schema<TProfessionalClubEmp>({
   },
   phoneNumber: {
     type: String,
-    required: true,
+    required: false,
   },
   clubName: {
     type: String,

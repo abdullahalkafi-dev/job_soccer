@@ -298,6 +298,21 @@ const expireOldJobs = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+/**
+ * Get job counts grouped by role for home page
+ * GET /api/v1/jobs/counts-by-role
+ */
+const getJobCountsByRole = catchAsync(async (req: Request, res: Response) => {
+  const result = await JobService.getJobCountsByRole();
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Job counts by role retrieved successfully",
+    data: result,
+  });
+});
+
 export const JobController = {
   createJob,
   getAllJobs,
@@ -315,4 +330,5 @@ export const JobController = {
   incrementApplicationCount,
   bulkUpdateStatus,
   expireOldJobs,
+  getJobCountsByRole,
 };

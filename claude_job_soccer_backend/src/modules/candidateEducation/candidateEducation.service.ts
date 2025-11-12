@@ -4,6 +4,7 @@ import { CandidateEducation } from "./candidateEducation.model";
 import { TCandidateEducation } from "./candidateEducation.interface";
 import { User } from "../user/user.model";
 import { UserType } from "../user/user.interface";
+import { candidateEducationCache } from "./candidateEducation.cache";
 
 /**
  * Add a new education record for a candidate
@@ -41,6 +42,9 @@ const addEducation = async (
     candidateRole: user.role,
   });
 
+  // Invalidate cache after adding
+  await candidateEducationCache.invalidateUserCache(userId);
+
   return newEducation;
 };
 
@@ -75,6 +79,12 @@ const updateEducation = async (
     );
   }
 
+  // Invalidate cache after updating
+  await candidateEducationCache.invalidateUserCache(userId);
+  await candidateEducationCache.deleteCache(
+    candidateEducationCache.getCacheKey.byId(educationId)
+  );
+
   return updatedEducation;
 };
 
@@ -95,6 +105,12 @@ const removeEducation = async (
   }
 
   await CandidateEducation.deleteOne({ _id: educationId });
+
+  // Invalidate cache after deleting
+  await candidateEducationCache.invalidateUserCache(userId);
+  await candidateEducationCache.deleteCache(
+    candidateEducationCache.getCacheKey.byId(educationId)
+  );
 };
 
 /**
@@ -103,11 +119,31 @@ const removeEducation = async (
 const getAllEducationsByUser = async (
   userId: string
 ): Promise<TCandidateEducation[]> => {
+  const cacheKey = candidateEducationCache.getCacheKey.byUser(userId);
+
+  // Try to get from cache
+  const cachedData = await candidateEducationCache.getCache<
+    TCandidateEducation[]
+  >(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  // If not in cache, fetch from database
   const educations = await CandidateEducation.find({ userId })
     .sort({ startYear: -1, startMonth: -1 }) // Most recent first
     .lean();
 
-  return educations as TCandidateEducation[];
+  const result = educations as TCandidateEducation[];
+
+  // Store in cache
+  await candidateEducationCache.setCache(
+    cacheKey,
+    result,
+    candidateEducationCache.CACHE_TTL
+  );
+
+  return result;
 };
 
 /**
@@ -116,13 +152,32 @@ const getAllEducationsByUser = async (
 const getEducationById = async (
   educationId: string
 ): Promise<TCandidateEducation> => {
+  const cacheKey = candidateEducationCache.getCacheKey.byId(educationId);
+
+  // Try to get from cache
+  const cachedData =
+    await candidateEducationCache.getCache<TCandidateEducation>(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  // If not in cache, fetch from database
   const education = await CandidateEducation.findById(educationId).lean();
 
   if (!education) {
     throw new AppError(StatusCodes.NOT_FOUND, "Education record not found");
   }
 
-  return education as TCandidateEducation;
+  const result = education as TCandidateEducation;
+
+  // Store in cache
+  await candidateEducationCache.setCache(
+    cacheKey,
+    result,
+    candidateEducationCache.CACHE_TTL
+  );
+
+  return result;
 };
 
 /**
@@ -132,6 +187,17 @@ const getEducationById = async (
 const getEducationsByUsers = async (
   userIds: string[]
 ): Promise<Record<string, TCandidateEducation[]>> => {
+  const cacheKey = candidateEducationCache.getCacheKey.byUsers(userIds);
+
+  // Try to get from cache
+  const cachedData = await candidateEducationCache.getCache<
+    Record<string, TCandidateEducation[]>
+  >(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  // If not in cache, fetch from database
   const educations = await CandidateEducation.find({
     userId: { $in: userIds },
   })
@@ -147,6 +213,13 @@ const getEducationsByUsers = async (
     acc[key].push(edu as TCandidateEducation);
     return acc;
   }, {} as Record<string, TCandidateEducation[]>);
+
+  // Store in cache
+  await candidateEducationCache.setCache(
+    cacheKey,
+    grouped,
+    candidateEducationCache.CACHE_TTL
+  );
 
   return grouped;
 };

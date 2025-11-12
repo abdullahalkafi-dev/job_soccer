@@ -12,7 +12,6 @@ const router = express.Router();
  *   - country: string (filter by country)
  *   - page: number (default: 1)
  *   - limit: number (default: 10)
- *   - sortBy: string (default: -profileAIScore)
  */
 router.get("/search", CandidateController.searchCandidates);
 

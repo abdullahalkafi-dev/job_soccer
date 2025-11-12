@@ -480,6 +480,38 @@ const expireOldJobs = async () => {
   };
 };
 
+/**
+ * Get job counts grouped by role/jobCategory for home page display
+ * Returns: [{ role: "Professional Player", jobCount: 4 }, ...]
+ */
+const getJobCountsByRole = async () => {
+  const result = await Job.aggregate([
+    {
+      $match: {
+        status: "active", // Only count active jobs
+      },
+    },
+    {
+      $group: {
+        _id: "$jobCategory",
+        jobCount: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        role: "$_id",
+        jobCount: 1,
+      },
+    },
+    {
+      $sort: { jobCount: -1 }, // Sort by count descending
+    },
+  ]);
+
+  return result;
+};
+
 // Export all service functions
 export const JobService = {
   createJob,
@@ -496,5 +528,6 @@ export const JobService = {
   getEmployerJobStats,
   bulkUpdateStatus,
   expireOldJobs,
+  getJobCountsByRole,
 };
 

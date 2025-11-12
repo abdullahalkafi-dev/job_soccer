@@ -248,30 +248,6 @@ async function handleScoringErrors() {
   }
 }
 
-// ============================================================================
-// Example 7: Using Scores for Filtering (Conceptual)
-// ============================================================================
-
-/**
- * This example shows how you might use the AI scores in queries
- * Note: This would be in your actual service/controller code
- */
-async function findTopCandidates() {
-  // Pseudo-code for filtering candidates by score
-  /*
-  const topCandidates = await User.find({
-    userType: 'candidate',
-    profileAIScore: { $gte: 80 }, // Profiles with 80+ score
-    role: CandidateRole.PROFESSIONAL_PLAYER
-  })
-  .sort({ profileAIScore: -1 }) // Highest scores first
-  .limit(10);
-  
-  return topCandidates;
-  */
-  
-  console.log('Example query for finding top candidates by AI score');
-}
 
 // ============================================================================
 // Run Examples (Uncomment to test)
@@ -302,6 +278,6 @@ export {
   scoreOnFieldStaff,
   batchScoreProfiles,
   handleScoringErrors,
-  findTopCandidates,
+
   runAllExamples,
 };

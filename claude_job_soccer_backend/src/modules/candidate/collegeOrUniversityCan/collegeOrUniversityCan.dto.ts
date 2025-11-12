@@ -15,14 +15,14 @@ const createCollegeOrUniversityCanDto = z.object({
         .transform((date) => new Date(date)),
     placeOfBirth: z.string().trim().min(1, "Place of birth is required"),
     nationality: z.string().trim().min(1, "Nationality is required"),
-    phoneNumber: z.string().trim().min(1, "Phone number is required"),
+    phoneNumber: z.string().trim().min(1, "Phone number is required").optional(),
     gender: z.string().trim().min(1, "Gender is required"),
     height: z.object({
         size: z.number().positive("Height must be positive"),
         unit: z.enum(["cm", "m", "in", "ft"]),
     }),
     currentClub: z.string().trim().min(1, "Current club is required"),
-    category: z.string().trim().min(1, "Category is required"),
+    category: z.string().trim().min(1, "Category is required").optional(),
     position: z.enum([
         "GK",
         "Central back",
@@ -37,7 +37,7 @@ const createCollegeOrUniversityCanDto = z.object({
     ]),
     agent: z.string().trim().min(1, "Agent is required").optional(),
     socialMedia: z.string().trim().min(1, "Social media is required"),
-    satOrAct: z.string().trim().min(1, "SAT or ACT is required"),
+    satOrAct: z.string().trim().min(1, "SAT or ACT is required").optional(),
     availability: z.enum(["Now", "Soon", "Later"]),
     weight: z.object({
         size: z.number().positive("Weight must be positive"),

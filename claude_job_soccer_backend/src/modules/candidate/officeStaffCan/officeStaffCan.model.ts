@@ -12,17 +12,19 @@ enum TPosition {
   SALES = "Sales",
 }
 
+
 export type TOfficeStaffCan = {
   dateOfBirth: Date;
   placeOfBirth: string;
   country: (typeof countryList)[number];
   nationality: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   position: TPosition;
-  languages: string;
   availability: string;
   agent?: string;
   socialMedia: string;
+  currentClub: string;
+  gender: "male" | "female";
   videos: {
     videoType: string; // From VideoType enum
     url: string;
@@ -36,19 +38,25 @@ const officeStaffSchema = new Schema<TOfficeStaffCan>(
   {
     dateOfBirth: { type: Date, required: true },
     placeOfBirth: { type: String, required: true, trim: true },
-    nationality: { type: String, required: true, trim: true },
-    phoneNumber: { type: String, required: true, trim: true },
-    availability: { type: String, required: true, trim: true },
     country: {
       type: String,
       enum: countryList,
       required: true,
     },
-    socialMedia: { type: String, required: true, trim: true },
-    agent: { type: String, required: false, trim: true },
+    nationality: { type: String, required: true, trim: true },
+    phoneNumber: { type: String, required: false, trim: true },
     position: {
       type: String,
       enum: Object.values(TPosition),
+      required: true,
+    },
+    availability: { type: String, required: true, trim: true },
+    agent: { type: String, required: false, trim: true },
+    socialMedia: { type: String, required: true, trim: true },
+    currentClub: { type: String, required: true, trim: true },
+    gender: {
+      type: String,
+      enum: ["male", "female"],
       required: true,
     },
     videos: [

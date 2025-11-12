@@ -39,10 +39,10 @@ export type TProfessionalPlayerCan = {
   dateOfBirth: Date;
   placeOfBirth: string;
   nationality: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   gender: string;
   height: { size: number; unit: string };
-  nationalTeamCategory: TNationalTeamCategory;
+  nationalTeamCategory?: TNationalTeamCategory;
   currentClub: string;
   division: string;
   position: TPosition;
@@ -68,7 +68,7 @@ const professionalPlayerCanSchema = new Schema<TProfessionalPlayerCan>(
         dateOfBirth: { type: Date, required: true },
         placeOfBirth: { type: String, required: true, trim: true },
         nationality: { type: String, required: true, trim: true },
-        phoneNumber: { type: String, required: true, trim: true },
+        phoneNumber: { type: String, required: false, trim: true },
         gender: { type: String, required: true, trim: true },
         height: {
             size: { type: Number, required: true },
@@ -77,7 +77,7 @@ const professionalPlayerCanSchema = new Schema<TProfessionalPlayerCan>(
         nationalTeamCategory: {
             type: String,
             enum: Object.values(TNationalTeamCategory),
-            required: true,
+            required: false,
         },
         currentClub: { type: String, required: true, trim: true },
         division: { type: String, required: true, trim: true },

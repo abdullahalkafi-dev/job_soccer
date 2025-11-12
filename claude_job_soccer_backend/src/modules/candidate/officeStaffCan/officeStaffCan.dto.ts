@@ -21,7 +21,7 @@ const createOfficeStaffCanDto = z.object({
       message: "Please select a valid country",
     }),
   nationality: z.string().trim().min(1, "Nationality is required"),
-  phoneNumber: z.string().trim().min(1, "Phone number is required"),
+  phoneNumber: z.string().trim().min(1, "Phone number is required").optional(),
   position: z.enum([
     "Administrative Director",
     "Community Manager",
@@ -32,16 +32,16 @@ const createOfficeStaffCanDto = z.object({
     "Equipment Staff",
     "Sales",
   ]),
-  languages: z.string().trim().optional(),
   availability: z.string().trim().min(1, "Availability is required"),
   agent: z.string().trim().min(1, "Agent is required").optional(),
   socialMedia: z.string().trim().min(1, "Social media is required"),
-  // Videos will be handled separately through file upload
+  currentClub: z.string().trim().min(1, "Current club is required"),
+  gender: z.enum(["male", "female"]),
   videos: z.array(
     z.object({
       videoType: z.string().min(1, "Video type is required"),
       url: z.string().min(1, "Video URL is required"),
-      duration: z.number().min(0, "Duration must be non-negative"), // Duration validation handled by frontend
+      duration: z.number().min(0, "Duration must be non-negative"),
       title: z.string().optional(),
       description: z.string().optional(),
       uploadedAt: z.date().optional(),
@@ -58,4 +58,3 @@ export const OfficeStaffCanDto = {
   createOfficeStaffCanDto,
   updateOfficeStaffCanDto,
 };
-

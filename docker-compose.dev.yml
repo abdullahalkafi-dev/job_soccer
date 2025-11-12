@@ -1,3 +1,5 @@
+name: claude_job_soccer_dev
+
 services:
   redis_claude_job_soccer:
     image: redis:7

@@ -7,7 +7,7 @@ export type TCollageOrUniversityEmp = {
   address: string;
   founded: string;
   clubName: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   location: string;
   level: string;
   website: string;
@@ -34,7 +34,7 @@ const collegeOrUniversityEmpSchema = new Schema<TCollageOrUniversityEmp>({
   },
   phoneNumber: {
     type: String,
-    required: true,
+    required: false,
   },
   location: {
     type: String,

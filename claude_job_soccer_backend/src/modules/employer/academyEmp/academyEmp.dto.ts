@@ -10,7 +10,7 @@ const createAcademyEmpDto = z.object({
     location: z.string().trim().min(1, "Location is required"),
     level: z.string().trim().min(1, "Level is required"),
     website: z.string().trim().min(1, "Website is required"),
-    phoneNumber: z.string().trim().min(1, "Phone number is required"),
+    phoneNumber: z.string().trim().min(1, "Phone number is required").optional(),
     clubContact: z.string().trim().min(1, "Club contact is required"),
     clubDescription: z.string().trim().min(1, "Club description is required"),
 });

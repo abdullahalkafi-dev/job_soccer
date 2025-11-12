@@ -15,7 +15,7 @@ const createAmateurPlayerCanDto = z.object({
     .transform((date) => new Date(date)),
   placeOfBirth: z.string().trim().min(1, "Place of birth is required"),
   nationality: z.string().trim().min(1, "Nationality is required"),
-  phoneNumber: z.string().trim().min(1, "Phone number is required"),
+  phoneNumber: z.string().trim().min(1, "Phone number is required").optional(),
   gender: z.string().trim().min(1, "Gender is required"),
   height: z.object({
     size: z.number().positive("Height must be positive"),
@@ -30,7 +30,7 @@ const createAmateurPlayerCanDto = z.object({
     "U19",
     "U20",
     "U21",
-  ]),
+  ]).optional(),
   currentClub: z.string().trim().min(1, "Current club is required"),
   position: z.enum([
     "GK",

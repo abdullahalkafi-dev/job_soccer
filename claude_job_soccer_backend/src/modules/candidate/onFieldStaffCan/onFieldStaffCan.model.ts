@@ -20,13 +20,11 @@ export type TOnFieldStaffCan = {
   dateOfBirth: Date;
   placeOfBirth: string;
   nationality: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   currentClub: string;
   availability: string;
-  league: string;
   gender: "male" | "female";
   country: (typeof countryList)[number];
-  category: string;
   socialMedia: string;
   agent?: string;
   position: TPosition;
@@ -44,17 +42,15 @@ const onFieldStaffCanSchema = new Schema<TOnFieldStaffCan>(
     dateOfBirth: { type: Date, required: true },
     placeOfBirth: { type: String, required: true, trim: true },
     nationality: { type: String, required: true, trim: true },
-    phoneNumber: { type: String, required: true, trim: true },
+    phoneNumber: { type: String, required: false, trim: true },
     currentClub: { type: String, required: true, trim: true },
     availability: { type: String, required: true, trim: true },
-    league: { type: String, required: true, trim: true },
     country: {
       type: String,
       enum: countryList,
       required: true,
     },
     gender: { type: String, enum: ["male", "female"], required: true },
-    category: { type: String, required: true, trim: true },
     socialMedia: { type: String, required: true, trim: true },
     agent: { type: String, required: false, trim: true },
     position: {

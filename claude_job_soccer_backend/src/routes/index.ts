@@ -14,7 +14,8 @@ import { CandidateEducationRoutes } from "../modules/candidateEducation/candidat
 import { CandidateExperienceRoutes } from "../modules/candidateExperience/candidateExperience.route";
 import { CandidateLicensesAndCertificationRoutes } from "../modules/candidateLicensesAndCertification/candidateLicensesAndCertification.route";
 import { JobApplyRoutes } from "../modules/jobApply/jobApply.route";
-
+import { ChatRoutes } from "../modules/chat/chat.route";
+import { MessageRoutes } from "../modules/message/message.route";
 
 const router: Router = express.Router();
 
@@ -78,6 +79,14 @@ const apiRoutes = [
   {
     path: "/job-applications",
     route: JobApplyRoutes,
+  },
+  {
+    path: "/chat",
+    route: ChatRoutes,
+  },
+  {
+    path: "/message",
+    route: MessageRoutes,
   },
 ];
 

@@ -4,6 +4,7 @@ import { CandidateExperience } from "./candidateExperience.model";
 import { TCandidateExperience } from "./candidateExperience.interface";
 import { User } from "../user/user.model";
 import { UserType } from "../user/user.interface";
+import { candidateExperienceCache } from "./candidateExpreience.cache";
 
 /**
  * Add a new experience record for a candidate
@@ -50,6 +51,9 @@ const addExperience = async (
     profileId: user.profileId,
     candidateRole: user.role,
   });
+
+  // Invalidate cache after adding
+  await candidateExperienceCache.invalidateUserCache(userId, user.profileId);
 
   return newExperience;
 };
@@ -98,6 +102,12 @@ const updateExperience = async (
     );
   }
 
+  // Invalidate cache after updating
+  await candidateExperienceCache.invalidateUserCache(userId, experience.profileId);
+  await candidateExperienceCache.deleteCache(
+    candidateExperienceCache.getCacheKey.byId(experienceId)
+  );
+
   return updatedExperience;
 };
 
@@ -118,6 +128,12 @@ const removeExperience = async (
   }
 
   await CandidateExperience.deleteOne({ _id: experienceId });
+
+  // Invalidate cache after deleting
+  await candidateExperienceCache.invalidateUserCache(userId, experience.profileId);
+  await candidateExperienceCache.deleteCache(
+    candidateExperienceCache.getCacheKey.byId(experienceId)
+  );
 };
 
 /**
@@ -126,11 +142,25 @@ const removeExperience = async (
 const getAllExperiencesByUser = async (
   userId: string
 ): Promise<TCandidateExperience[]> => {
+  const cacheKey = candidateExperienceCache.getCacheKey.byUser(userId);
+
+  // Try to get from cache
+  const cachedData = await candidateExperienceCache.getCache<TCandidateExperience[]>(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  // If not in cache, fetch from database
   const experiences = await CandidateExperience.find({ userId })
     .sort({ isCurrentlyWorking: -1, startYear: -1, startMonth: -1 }) // Currently working first, then most recent
     .lean();
 
-  return experiences as TCandidateExperience[];
+  const result = experiences as TCandidateExperience[];
+
+  // Store in cache
+  await candidateExperienceCache.setCache(cacheKey, result, candidateExperienceCache.CACHE_TTL);
+
+  return result;
 };
 
 /**
@@ -139,13 +169,27 @@ const getAllExperiencesByUser = async (
 const getExperienceById = async (
   experienceId: string
 ): Promise<TCandidateExperience> => {
+  const cacheKey = candidateExperienceCache.getCacheKey.byId(experienceId);
+
+  // Try to get from cache
+  const cachedData = await candidateExperienceCache.getCache<TCandidateExperience>(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  // If not in cache, fetch from database
   const experience = await CandidateExperience.findById(experienceId).lean();
 
   if (!experience) {
     throw new AppError(StatusCodes.NOT_FOUND, "Experience record not found");
   }
 
-  return experience as TCandidateExperience;
+  const result = experience as TCandidateExperience;
+
+  // Store in cache
+  await candidateExperienceCache.setCache(cacheKey, result, candidateExperienceCache.CACHE_TTL);
+
+  return result;
 };
 
 /**
@@ -155,6 +199,15 @@ const getExperienceById = async (
 const getExperiencesByUsers = async (
   userIds: string[]
 ): Promise<Record<string, TCandidateExperience[]>> => {
+  const cacheKey = candidateExperienceCache.getCacheKey.byUsers(userIds);
+
+  // Try to get from cache
+  const cachedData = await candidateExperienceCache.getCache<Record<string, TCandidateExperience[]>>(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  // If not in cache, fetch from database
   const experiences = await CandidateExperience.find({
     userId: { $in: userIds },
   })
@@ -171,6 +224,9 @@ const getExperiencesByUsers = async (
     return acc;
   }, {} as Record<string, TCandidateExperience[]>);
 
+  // Store in cache
+  await candidateExperienceCache.setCache(cacheKey, grouped, candidateExperienceCache.CACHE_TTL);
+
   return grouped;
 };
 
@@ -181,11 +237,25 @@ const getExperiencesByUsers = async (
 const getExperiencesByProfileId = async (
   profileId: string
 ): Promise<TCandidateExperience[]> => {
+  const cacheKey = candidateExperienceCache.getCacheKey.byProfile(profileId);
+
+  // Try to get from cache
+  const cachedData = await candidateExperienceCache.getCache<TCandidateExperience[]>(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+
+  // If not in cache, fetch from database
   const experiences = await CandidateExperience.find({ profileId })
     .sort({ isCurrentlyWorking: -1, startYear: -1, startMonth: -1 })
     .lean();
 
-  return experiences as TCandidateExperience[];
+  const result = experiences as TCandidateExperience[];
+
+  // Store in cache
+  await candidateExperienceCache.setCache(cacheKey, result, candidateExperienceCache.CACHE_TTL);
+
+  return result;
 };
 
 export const CandidateExperienceService = {

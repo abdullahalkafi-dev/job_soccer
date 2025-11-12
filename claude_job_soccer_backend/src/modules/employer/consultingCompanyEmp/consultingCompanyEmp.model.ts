@@ -11,7 +11,7 @@ export type TConsultingCompanyEmp = {
   location: string;
   level: string;
   website: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   clubContact: string;
   clubDescription: string;
 };
@@ -56,7 +56,7 @@ const consultingCompanyEmpSchema = new Schema<TConsultingCompanyEmp>({
   },
   phoneNumber: {
     type: String,
-    required: true,
+    required: false,
   },
   clubContact: {
     type: String,

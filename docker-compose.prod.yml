@@ -1,9 +1,11 @@
+name: claude_job_soccer_prod
+
 services:
   redis_claude_job_soccer:
     image: redis:7
     container_name: redis_claude_job_soccer_prod
     ports:
-      - "6381:6379"
+      - "6382:6379"
     restart: always
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -19,7 +21,7 @@ services:
       dockerfile: Dockerfile.prod
     container_name: claude_job_soccer-backend_prod
     ports:
-      - "5013:5013"
+      - "5014:5014"
     env_file:
       - ./claude_job_soccer_backend/.env.production
     volumes:
@@ -47,7 +49,7 @@ services:
     container_name: elasticsearch_claude_job_soccer_prod
     restart: always
     ports:
-      - "9200:9200"
+      - "9201:9200"
     environment:
       - "ES_JAVA_OPTS=-Xms2048m -Xmx2048m"
       - "discovery.type=single-node"
@@ -71,7 +73,7 @@ services:
     depends_on: 
       - elasticsearch 
     ports: 
-      - "5601:5601"
+      - "5602:5601"
     environment:
       - "ELASTICSEARCH_HOSTS=http://elasticsearch:9200" 
     networks: 

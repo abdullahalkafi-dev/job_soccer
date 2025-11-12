@@ -8,7 +8,7 @@ const createProfessionalClubEmpDto = z.object({
     founded: z.string().trim().min(1, "Founded is required"),
     website: z.string().trim().min(1, "Website is required"),
     nationality: z.string().trim().min(1, "Nationality is required"),
-    phoneNumber: z.string().trim().min(1, "Phone number is required"),
+    phoneNumber: z.string().trim().min(1, "Phone number is required").optional(),
     clubName: z.string().trim().min(1, "Club name is required"),
     clubContact: z.string().trim().min(1, "Club contact is required"),
     clubDescription: z.string().trim().min(1, "Club description is required"),

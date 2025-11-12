@@ -45,7 +45,6 @@ const searchCandidates = async (query: Record<string, unknown>) => {
     country,
     page = 1,
     limit = 10,
-    sortBy = "-profileAIScore",
   } = query;
 
   // Record search term for history tracking
@@ -75,10 +74,9 @@ const searchCandidates = async (query: Record<string, unknown>) => {
 
   // Get users matching the criteria
   const users = await User.find(userQuery)
-    .sort(sortBy as string)
     .skip((Number(page) - 1) * Number(limit))
     .limit(Number(limit))
-    .lean();
+    .lean()
 
   // Fetch profile details for each user
   const candidatesWithProfiles = await Promise.all(
@@ -98,7 +96,6 @@ const searchCandidates = async (query: Record<string, unknown>) => {
         email: user.email,
         role: user.role,
         profileImage: user.profileImage,
-        profileAIScore: user.profileAIScore,
         userType: user.userType,
         profile,
       };
@@ -143,14 +140,12 @@ const getFeaturedCandidates = async () => {
 
   await Promise.all(
     categories.map(async (category) => {
-      // Get top 4 candidates from each category sorted by AI score
       const users = await User.find({
         userType: "candidate",
         role: category,
         isDeleted: { $ne: true },
         profileId: { $exists: true, $ne: null },
       })
-        .sort({ profileAIScore: -1 }) // Sort by highest AI score
         .limit(4)
         .lean();
 
@@ -167,7 +162,6 @@ const getFeaturedCandidates = async () => {
             email: user.email,
             role: user.role,
             profileImage: user.profileImage,
-            profileAIScore: user.profileAIScore,
             userType: user.userType,
             profile,
           };
@@ -216,7 +210,6 @@ const getCandidateById = async (id: string) => {
     email: user.email,
     role: user.role,
     profileImage: user.profileImage,
-    profileAIScore: user.profileAIScore,
     userType: user.userType,
     isVerified: user.isVerified,
     profile,

@@ -171,7 +171,7 @@ const createUser = async (user: TCreateUser) => {
 
         const hashPassword = await bcrypt.hash(
           user.password,
-          Number(process.env.BCRYPT_SALT_ROUNDS) || 12
+          Number(config.bcrypt_salt_rounds) || 10
         );
 
         const authEntry = await Auth.create(
@@ -459,7 +459,7 @@ const resetPasswordToDB = async (
 
   const hashPassword = await bcrypt.hash(
     newPassword,
-    Number(config.bcrypt_salt_rounds)
+    Number(config.bcrypt_salt_rounds || 10)
   );
 
   const updateData = {
@@ -516,7 +516,7 @@ const changePasswordToDB = async (
   //hash password
   const hashPassword = await bcrypt.hash(
     newPassword,
-    Number(config.bcrypt_salt_rounds || 12)
+    Number(config.bcrypt_salt_rounds || 10)
   );
 
   const updateData = {
