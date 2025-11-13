@@ -25,7 +25,7 @@ export type TOnFieldStaffCan = {
   availability: string;
   gender: "Male" | "Female"|"Other";
    league: string;
-   category: string;
+   category?: string;
   country: (typeof countryList)[number];
   socialMedia: string;
   agent?: string;
@@ -56,7 +56,7 @@ const onFieldStaffCanSchema = new Schema<TOnFieldStaffCan>(
     socialMedia: { type: String, required: true, trim: true },
     agent: { type: String, required: false, trim: true },
     league: { type: String, required: true, trim: true },
-     category: { type: String, required: true, trim: true },
+     category: { type: String, required: false, trim: true },
     position: {
       type: String,
       enum: Object.values(TPosition),
