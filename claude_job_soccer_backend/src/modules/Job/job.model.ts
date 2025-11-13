@@ -121,7 +121,6 @@ const jobSchema = new Schema<IJob>(
     },
     expiresAt: {
       type: Date,
-      index: true, // TTL index for auto-cleanup
     },
   },
   {
