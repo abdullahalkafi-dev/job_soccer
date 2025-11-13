@@ -23,7 +23,7 @@ export type TOnFieldStaffCan = {
   phoneNumber?: string;
   currentClub: string;
   availability: string;
-  gender: "male" | "female";
+  gender: "Male" | "Female"|"Other";
   country: (typeof countryList)[number];
   socialMedia: string;
   agent?: string;
@@ -50,7 +50,7 @@ const onFieldStaffCanSchema = new Schema<TOnFieldStaffCan>(
       enum: countryList,
       required: true,
     },
-    gender: { type: String, enum: ["male", "female"], required: true },
+    gender: { type: String, enum: ["Male", "Female","Other"], required: true },
     socialMedia: { type: String, required: true, trim: true },
     agent: { type: String, required: false, trim: true },
     position: {

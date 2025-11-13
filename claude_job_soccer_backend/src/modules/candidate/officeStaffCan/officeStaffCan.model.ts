@@ -24,7 +24,7 @@ export type TOfficeStaffCan = {
   agent?: string;
   socialMedia: string;
   currentClub: string;
-  gender: "male" | "female";
+  gender: "Male" | "Female" | "Other";
   videos: {
     videoType: string; // From VideoType enum
     url: string;
@@ -56,7 +56,7 @@ const officeStaffSchema = new Schema<TOfficeStaffCan>(
     currentClub: { type: String, required: true, trim: true },
     gender: {
       type: String,
-      enum: ["male", "female"],
+      enum: ["Male", "Female", "Other"],
       required: true,
     },
     videos: [

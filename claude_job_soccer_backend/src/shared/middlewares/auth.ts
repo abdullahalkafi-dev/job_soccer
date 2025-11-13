@@ -5,6 +5,7 @@ import config from "../../config";
 
 import { jwtHelper } from "../util/jwtHelper";
 import AppError from "../../errors/AppError";
+import { logger } from "../logger/logger";
 
 const auth =
   (...roles: string[]) =>
@@ -12,6 +13,8 @@ const auth =
     try {
       const tokenWithBearer = req.headers.authorization;
       console.log(tokenWithBearer);
+console.log(req.body);
+logger.info(req.body)
       if (!tokenWithBearer) {
         throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized");
       }

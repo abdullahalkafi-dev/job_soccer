@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from "express";
-
+import { logger } from "../logger/logger";
 
 const validateRequest =
-  (schema: any) =>
-  async (req: Request, res: Response, next: NextFunction) => {
-
+  (schema: any) => async (req: Request, res: Response, next: NextFunction) => {
     try {
+      logger.info(req.body);
+      console.log(req.body);
       await schema.parseAsync({
         body: req.body || {},
         params: req.params,
