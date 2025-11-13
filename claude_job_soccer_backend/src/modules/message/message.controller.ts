@@ -5,7 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { MessageService } from "./message.service";
 
 const createMessage = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user.userId;
+  const userId = req.user.id;
   const { chatId, receiverId, content, mediaUrl, messageType } = req.body;
 
   const message = await MessageService.createMessage({
@@ -26,7 +26,7 @@ const createMessage = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMessagesByChatId = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user.userId;
+  const userId = req.user.id;
   const { chatId } = req.params;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 50;
@@ -53,7 +53,7 @@ const getMessagesByChatId = catchAsync(async (req: Request, res: Response) => {
 });
 
 const markMessagesAsRead = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user.userId;
+  const userId = req.user.id;
   const { chatId } = req.params;
 
   const result = await MessageService.markMessagesAsRead(chatId, userId);
@@ -67,7 +67,7 @@ const markMessagesAsRead = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteMessage = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user.userId;
+  const userId = req.user.id;
   const { messageId } = req.params;
 
   const result = await MessageService.deleteMessage(messageId, userId);
@@ -82,7 +82,7 @@ const deleteMessage = catchAsync(async (req: Request, res: Response) => {
 
 const getUnreadMessageCount = catchAsync(
   async (req: Request, res: Response) => {
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const count = await MessageService.getUnreadMessageCount(userId);
 
@@ -96,7 +96,7 @@ const getUnreadMessageCount = catchAsync(
 );
 
 const searchMessages = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user.userId;
+  const userId = req.user.id;
   const { chatId } = req.params;
   const { searchTerm } = req.query;
 

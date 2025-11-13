@@ -16,7 +16,7 @@ const createOrGetChatSchema = z.object({
 });
 
 /**
- * POST /api/v1/chats/create-or-get
+ * POST /api/v1/chat/create-or-get
  * Create a new chat or get existing chat between two users
  * Body:
  *   - otherUserId: string (required) - The ID of the other user to chat with
@@ -31,7 +31,7 @@ router.post(
 );
 
 /**
- * GET /api/v1/chats/my-chats
+ * GET /api/v1/chat/my-chats
  * Get all chats for the authenticated user
  * Auth: Required (candidate, employer)
  * Response: Array of chat objects with participant info and unread counts
@@ -43,7 +43,7 @@ router.get(
 );
 
 /**
- * GET /api/v1/chats/blocked
+ * GET /api/v1/chat/blocked
  * Get all blocked chats for the authenticated user
  * Auth: Required (candidate, employer)
  * Response: Array of blocked chat objects
@@ -55,7 +55,7 @@ router.get(
 );
 
 /**
- * GET /api/v1/chats/:chatId
+ * GET /api/v1/chat/:chatId
  * Get a specific chat by ID with full details
  * Params:
  *   - chatId: string (required) - The ID of the chat to retrieve
@@ -69,7 +69,7 @@ router.get(
 );
 
 /**
- * POST /api/v1/chats/:chatId/block
+ * POST /api/v1/chat/:chatId/block
  * Block a user in a specific chat
  * Params:
  *   - chatId: string (required) - The ID of the chat
@@ -83,7 +83,7 @@ router.post(
 );
 
 /**
- * POST /api/v1/chats/:chatId/unblock
+ * POST /api/v1/chat/:chatId/unblock
  * Unblock a user in a specific chat
  * Params:
  *   - chatId: string (required) - The ID of the chat
@@ -97,7 +97,7 @@ router.post(
 );
 
 /**
- * DELETE /api/v1/chats/:chatId
+ * DELETE /api/v1/chat/:chatId
  * Delete a specific chat
  * Params:
  *   - chatId: string (required) - The ID of the chat to delete

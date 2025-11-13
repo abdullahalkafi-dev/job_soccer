@@ -24,7 +24,20 @@ const socketInit = (io: Server) => {
   // Middleware for authentication
   io.use((socket: IAuthenticatedSocket, next) => {
     try {
-      const token = socket.handshake.auth.token || socket.handshake.headers.authorization;
+      // Check multiple sources for token: auth object, headers, or query parameters
+      const token = 
+        socket.handshake.auth.token || 
+        socket.handshake.headers.authorization ||
+        socket.handshake.query.token ||
+        socket.handshake.query.Authorization;
+
+      console.log("🔍 Socket authentication attempt:", {
+        hasAuthToken: !!socket.handshake.auth.token,
+        hasHeaderAuth: !!socket.handshake.headers.authorization,
+        hasQueryToken: !!socket.handshake.query.token,
+        hasQueryAuth: !!socket.handshake.query.Authorization,
+        tokenReceived: !!token
+      });
 
       if (!token) {
         return next(new Error("Authentication error: No token provided"));
@@ -39,14 +52,26 @@ const socketInit = (io: Server) => {
         config.jwt.jwt_secret as Secret
       );
 
-      // Attach user data to socket
-      socket.data.userId = decoded.userId;
-      socket.data.userType = decoded.userType;
+      console.log("✅ Token verified, decoded payload:", decoded);
+
+      // Attach user data to socket (handle both 'id' and 'userId' from JWT)
+      socket.data.userId = decoded.userId || decoded.id;
+      socket.data.userType = decoded.userType || decoded.role;
       socket.data.email = decoded.email;
+    
+
+      if (!socket.data.userId) {
+        console.error("❌ No userId found in decoded token:", decoded);
+        return next(new Error("Authentication error: Invalid token payload"));
+      }
 
       next();
     } catch (error: any) {
-      console.error("Socket authentication error:", error.message);
+      console.error("❌ Socket authentication error:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       next(new Error("Authentication error: Invalid token"));
     }
   });

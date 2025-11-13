@@ -6,7 +6,7 @@ import { ChatService } from "./chat.service";
 
 const createOrGetChat = catchAsync(async (req: Request, res: Response) => {
   const { otherUserId } = req.body;
-  const userId = req.user.userId;
+  const userId = req.user.id;
 
   const chat = await ChatService.createOrGetChat(userId, otherUserId);
 
@@ -19,7 +19,7 @@ const createOrGetChat = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getUserChats = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user.userId;
+  const userId = req.user.id;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 20;
 
@@ -54,7 +54,7 @@ const getChatById = catchAsync(async (req: Request, res: Response) => {
 
 const blockUser = catchAsync(async (req: Request, res: Response) => {
   const { chatId } = req.params;
-  const userId = req.user.userId;
+  const userId = req.user.id;
 
   const chat = await ChatService.blockUser(chatId, userId);
 
@@ -68,7 +68,7 @@ const blockUser = catchAsync(async (req: Request, res: Response) => {
 
 const unblockUser = catchAsync(async (req: Request, res: Response) => {
   const { chatId } = req.params;
-  const userId = req.user.userId;
+  const userId = req.user.id;
 
   const chat = await ChatService.unblockUser(chatId, userId);
 
@@ -81,7 +81,7 @@ const unblockUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getBlockedChats = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user.userId;
+  const userId = req.user.id;
 
   const blockedChats = await ChatService.getBlockedChats(userId);
 
@@ -95,7 +95,7 @@ const getBlockedChats = catchAsync(async (req: Request, res: Response) => {
 
 const deleteChat = catchAsync(async (req: Request, res: Response) => {
   const { chatId } = req.params;
-  const userId = req.user.userId;
+  const userId = req.user.id;
 
   const result = await ChatService.deleteChat(chatId, userId);
 
