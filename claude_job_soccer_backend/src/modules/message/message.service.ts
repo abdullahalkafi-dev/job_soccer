@@ -4,6 +4,7 @@ import { Message } from "./message.model";
 import { IMessageDocument, MessageType } from "./message.interface";
 import { Chat } from "../chat/chat.model";
 import { User } from "../user/user.model";
+import { logger } from "../../shared/logger/logger";
 
 interface ICreateMessagePayload {
   chatId: string;
@@ -18,13 +19,13 @@ const createMessage = async (
   payload: ICreateMessagePayload
 ): Promise<IMessageDocument> => {
   const { chatId, senderId, receiverId } = payload;
-
+ console.log(payload);
   // Verify chat exists
   const chat = await Chat.findById(chatId);
   if (!chat) {
     throw new AppError(StatusCodes.NOT_FOUND, "Chat not found");
   }
-
+console.log(chat);
   // Verify users are part of the chat
   const isUserInChat = chat.users.some(
     (userId) =>
@@ -53,7 +54,8 @@ const createMessage = async (
   // Verify sender and receiver exist
   const sender = await User.findById(senderId);
   const receiver = await User.findById(receiverId);
-
+logger.info(sender)
+logger.info(receiver)
   if (!sender || !receiver) {
     throw new AppError(
       StatusCodes.NOT_FOUND,

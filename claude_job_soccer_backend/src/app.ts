@@ -16,12 +16,40 @@ const app: express.Application = express();
 app.set("trust proxy", 1); // Trust first proxy (nginx)
 //middlewares
 app.use(helmetConfig);
-app.use(
-  cors({
-    origin: ["*","http://localhost:3000","http://10.10.12.125:3000","http://10.10.12.125:3001"],
-    credentials: true,
-  })
-);
+
+// CORS configuration - Allow all origins in development, specific origins in production
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps, Postman, or same-origin)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      "http://localhost:3000",
+      "http://10.10.12.125:3000",
+      "http://10.10.12.125:3001",
+      "http://localhost:3001",
+    ];
+    
+    // In development, allow all origins
+    if (process.env.NODE_ENV !== "production") {
+      return callback(null, true);
+    }
+    
+    // In production, check against whitelist
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
+  exposedHeaders: ["X-Request-ID"],
+};
+
+app.use(cors(corsOptions));
+
 app.use(
   compression({
     threshold: 1024,
@@ -42,7 +70,10 @@ if (process.env.NODE_ENV !== "production") {
   app.use(winstonLogger.infoLogger);
 }
 
-//file retrieval
+//file retrieval - Static files with CORS headers
+app.use("/images", cors(corsOptions), express.static("uploads/images"));
+app.use("/videos", cors(corsOptions), express.static("uploads/videos"));
+app.use("/docs", cors(corsOptions), express.static("uploads/docs"));
 app.use(express.static("uploads"));
 app.get("/health", (req: Request, res: Response) => {
   logger.info("Health check endpoint called");

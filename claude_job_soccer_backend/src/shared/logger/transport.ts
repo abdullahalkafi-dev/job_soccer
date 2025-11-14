@@ -62,12 +62,19 @@ export const elasticTransport = new ElasticsearchTransport({
   bufferLimit: 100,
   flushInterval: 2000, // Flush every 2 seconds
   format: combine(addRequestId),
+  // Disable warnings to prevent spam
+  ensureMappingTemplate: false,
 });
+
+// Silently handle Elasticsearch errors in development
 elasticTransport.on("error", (error) => {
-  console.error("Elasticsearch transport error:", error);
+  if (process.env.NODE_ENV === "production") {
+    console.error("Elasticsearch transport error:", error);
+  }
+  // Silently fail in development
 });
+
 elasticTransport.on("warning", (warning) => {
-  console.warn("Elasticsearch transport warning:", warning);
 });
 
 export const errorFileTransport = fileTransport(

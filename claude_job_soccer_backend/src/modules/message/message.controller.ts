@@ -7,7 +7,14 @@ import { MessageService } from "./message.service";
 const createMessage = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
   const { chatId, receiverId, content, mediaUrl, messageType } = req.body;
-
+console.log(`--------------------${{
+    chatId,
+    senderId: userId,
+    receiverId,
+    content,
+    mediaUrl,
+    messageType,
+  }}---------------------------`);
   const message = await MessageService.createMessage({
     chatId,
     senderId: userId,

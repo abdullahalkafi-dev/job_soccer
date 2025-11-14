@@ -32,7 +32,7 @@ const searchMessagesSchema = z.object({
 });
 
 /**
- * POST /api/v1/messages/send
+ * POST /api/v1/message/send
  * Send a new message in a chat
  * Body:
  *   - chatId: string (required) - The ID of the chat
@@ -52,7 +52,7 @@ router.post(
 );
 
 /**
- * GET /api/v1/messages/chat/:chatId
+ * GET /api/v1/message/chat/:chatId
  * Get all messages in a specific chat with pagination
  * Params:
  *   - chatId: string (required) - The ID of the chat
@@ -69,7 +69,7 @@ router.get(
 );
 
 /**
- * POST /api/v1/messages/chat/:chatId/mark-read
+ * POST /api/v1/message/chat/:chatId/mark-read
  * Mark all messages in a chat as read for the authenticated user
  * Params:
  *   - chatId: string (required) - The ID of the chat
@@ -83,7 +83,7 @@ router.post(
 );
 
 /**
- * GET /api/v1/messages/unread-count
+ * GET /api/v1/message/unread-count
  * Get total count of unread messages for the authenticated user
  * Auth: Required (candidate, employer)
  * Response: Object with unread message count
@@ -95,7 +95,7 @@ router.get(
 );
 
 /**
- * GET /api/v1/messages/chat/:chatId/search
+ * GET /api/v1/message/chat/:chatId/search
  * Search messages within a specific chat
  * Params:
  *   - chatId: string (required) - The ID of the chat
@@ -112,7 +112,7 @@ router.get(
 );
 
 /**
- * DELETE /api/v1/messages/:messageId
+ * DELETE /api/v1/message/:messageId
  * Delete a specific message
  * Params:
  *   - messageId: string (required) - The ID of the message to delete

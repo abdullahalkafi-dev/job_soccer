@@ -3,9 +3,10 @@ import { consoleTransport, elasticTransport, errorFileTransport, infoFileTranspo
 import config from "../../config";
 
 // Only use console transport in development
+// Disable Elasticsearch in development to avoid connection warnings
 const transports = config.node_env === "production" 
   ? [errorFileTransport, infoFileTransport, elasticTransport]
-  : [consoleTransport, errorFileTransport, infoFileTransport, elasticTransport];
+  : [consoleTransport, errorFileTransport, infoFileTransport]; // Removed elasticTransport in dev
 
 export const logger = createLogger({
   transports,
